@@ -1,0 +1,18 @@
+[
+    {
+        "command": "help",
+        "response": "Daftar command: help, about, github, clear"
+    },
+    {
+        "command": "about",
+        "response": "My Name Arifin Yunianta, \n Graduated computer science student who loves code and blockchain stuff. \n Now I am a fulltime backend developer. \n But sometimes I take a break to do some jobs that relevant with my hobby"
+    },
+    {
+        "command": "github",
+        "response": "https://github.com/Yunnie-pin"
+    },
+    {
+        "command": "clear",
+        "response": "__CLEAR__"
+    }
+]

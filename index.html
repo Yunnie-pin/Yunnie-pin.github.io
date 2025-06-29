@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yunnie-pin | Simple Profile</title>
+  <title>Yunnie-pin</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -21,14 +21,50 @@
       }
     }
   </script>
+  <style>
+    #terminal-output::-webkit-scrollbar {
+      width: 8px;
+    }
+    #terminal-output::-webkit-scrollbar-thumb {
+      background: #fb923c; /* orange */
+      border-radius: 8px;
+    }
+    #terminal-output::-webkit-scrollbar-track {
+      background: #fff8f1; /* light bg */
+      border-radius: 8px;
+    }
+    html.dark #terminal-output::-webkit-scrollbar-thumb {
+      background: #52525b; /* zinc-600 */
+    }
+    html.dark #terminal-output::-webkit-scrollbar-track {
+      background: #27272a; /* zinc-800 */
+    }
+    /* Firefox */
+    #terminal-output {
+      scrollbar-width: thin;
+      scrollbar-color: #fb923c #fff8f1;
+    }
+    html.dark #terminal-output {
+      scrollbar-color: #52525b #27272a;
+    }
+  </style>
 </head>
 <body class="min-h-screen flex items-center justify-center transition-colors duration-300 bg-orangebg text-orangetext dark:bg-zinc-900 dark:text-zinc-100">
   <button id="toggleMode" aria-label="Toggle dark/light mode"
     class="fixed top-6 right-6 z-10 rounded-full px-4 py-2 font-medium text-lg transition-colors duration-300 bg-orange text-white hover:bg-orangehover dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700">
     ☀️
   </button>
-  <div id="profile" class="w-full max-w-xs text-center rounded-2xl shadow-xl p-8 bg-orangecard dark:bg-zinc-800 transition-colors duration-300">
-    <p>Loading profile...</p>
+  <div class="w-full max-w-md flex flex-col items-center gap-6">
+    <div id="profile" class="w-full text-center rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300 p-8 bg-orangecard dark:bg-zinc-800 transition-colors duration-300">
+      <p>Loading profile...</p>
+    </div>
+    <div id="terminal-box" class="w-full bg-white/90 dark:bg-zinc-800/80 rounded-xl shadow hover:shadow-2xl transition-shadow duration-300 p-4 text-left text-sm font-mono text-orangetext dark:text-zinc-100 border border-orange/30 dark:border-none">
+      <div id="terminal-output" class="mb-2 min-h-[60px] max-h-64 overflow-y-auto"></div>
+      <form id="terminal-form" autocomplete="off" class="flex items-center gap-2">
+        <span class="text-orange select-none">$</span>
+        <input id="terminal-input" type="text" class="flex-1 bg-transparent outline-none border-b border-orange focus:border-orangehover px-2 py-1 text-orangetext dark:text-zinc-100 placeholder:text-orangetext/60 dark:placeholder:text-zinc-400" placeholder="Type a command..." autofocus />
+      </form>
+    </div>
   </div>
   <script>
     // Theme toggle logic with Tailwind
@@ -69,6 +105,35 @@
       .catch(() => {
         document.getElementById('profile').innerHTML = '<p>Failed to load profile.</p>';
       });
+    // Terminal chatbox logic
+    let commandsData = [];
+    fetch('commands.json')
+      .then(res => res.json())
+      .then(data => { commandsData = data; });
+    const terminalForm = document.getElementById('terminal-form');
+    const terminalInput = document.getElementById('terminal-input');
+    const terminalOutput = document.getElementById('terminal-output');
+    function printToTerminal(cmd, res) {
+      if(res === '__CLEAR__') {
+        terminalOutput.innerHTML = '';
+        return;
+      }
+      terminalOutput.innerHTML += `<div><span class='text-orange'>$</span> <span>${cmd}</span></div>`;
+      terminalOutput.innerHTML += `<div class='ml-4 mb-2 text-orange'>${res}</div>`;
+      terminalOutput.scrollTop = terminalOutput.scrollHeight;
+    }
+    terminalForm.onsubmit = (e) => {
+      e.preventDefault();
+      const cmd = terminalInput.value.trim();
+      if(!cmd) return;
+      const found = commandsData.find(c => c.command === cmd);
+      if(found) {
+        printToTerminal(cmd, found.response);
+      } else {
+        printToTerminal(cmd, 'Command not found. Type <span class="underline">help</span>');
+      }
+      terminalInput.value = '';
+    };
   </script>
 </body>
 </html>
