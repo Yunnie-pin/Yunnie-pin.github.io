@@ -424,6 +424,9 @@ body {
 }
 
 .nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: var(--font-mono);
   font-size: 0.9rem;
   color: var(--color-primary);
@@ -431,6 +434,16 @@ body {
   font-weight: 600;
 }
 .nav-logo:hover { text-shadow: 0 0 8px rgba(0,255,135,0.50); }
+.nav-logo-img {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  background-color: var(--color-primary);
+  -webkit-mask: url('/assets/gula-white.svg') center / contain no-repeat;
+  mask: url('/assets/gula-white.svg') center / contain no-repeat;
+  transition: background-color 0.3s;
+}
 
 .nav-links {
   display: flex;

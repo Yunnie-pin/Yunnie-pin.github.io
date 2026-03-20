@@ -5,53 +5,65 @@ import CmdButton from './ui/CmdButton.astro';
 
 <section id="hero" class="hero-section bg-grid-dots">
   <div class="container">
+    <div class="hero-grid">
 
-    <!-- Terminal boot line -->
-    <p class="font-mono boot-line animate-fade-up">
-      <span style="color: var(--color-fg-dim);">$</span>
-      <span style="color: var(--color-fg-muted);"> whoami</span>
-    </p>
+      <!-- Left: text content -->
+      <div class="hero-content">
 
-    <!-- Name -->
-    <h1 class="hero-name animate-fade-up animation-delay-75">
-      <span class="phosphor">Arifin</span>
-      <span style="color: var(--color-fg);"> Yunianta</span>
-      <Cursor />
-    </h1>
+        <!-- Terminal boot line -->
+        <p class="font-mono boot-line animate-fade-up">
+          <span style="color: var(--color-fg-dim);">$</span>
+          <span style="color: var(--color-fg-muted);"> whoami</span>
+        </p>
 
-    <!-- Role -->
-    <p class="hero-role font-mono animate-fade-up animation-delay-150">
-      <span style="color: var(--color-cyan);">&gt;</span>
-      <span id="typewriter" class="typewriter-text"> Backend Developer</span>
-    </p>
+        <!-- Name -->
+        <h1 class="hero-name animate-fade-up animation-delay-75">
+          <span class="phosphor">Arifin</span>
+          <span style="color: var(--color-fg);"> Yunianta</span>
+          <Cursor />
+        </h1>
 
-    <!-- Bio -->
-    <p class="hero-bio animate-fade-up animation-delay-225">
-      Membangun sistem backend yang efisien, scalable, dan mudah di-maintain.
-      Passionate tentang clean code, database design, dan API development.
-    </p>
+        <!-- Role -->
+        <p class="hero-role font-mono animate-fade-up animation-delay-150">
+          <span style="color: var(--color-cyan);">&gt;</span>
+          <span id="typewriter" class="typewriter-text"> Backend Developer</span>
+        </p>
 
-    <!-- Buttons -->
-    <div class="hero-actions animate-fade-up animation-delay-300">
-      <CmdButton href="#projects" variant="primary" prefix="$">
-        view projects
-      </CmdButton>
-      <CmdButton href="#contact" variant="outline" prefix="$">
-        contact me
-      </CmdButton>
-      <CmdButton href="/assets/cv.pdf" variant="outline" prefix="↓" target="_blank">
-        download cv
-      </CmdButton>
+        <!-- Bio -->
+        <p class="hero-bio animate-fade-up animation-delay-225">
+          Membangun sistem backend yang efisien, scalable, dan mudah di-maintain.
+          Passionate tentang clean code, database design, dan API development.
+        </p>
+
+        <!-- Buttons -->
+        <div class="hero-actions animate-fade-up animation-delay-300">
+          <CmdButton href="#projects" variant="primary" prefix="$">
+            view projects
+          </CmdButton>
+          <CmdButton href="#contact" variant="outline" prefix="$">
+            contact me
+          </CmdButton>
+          <CmdButton href="/assets/cv.pdf" variant="outline" prefix="↓" target="_blank">
+            download cv
+          </CmdButton>
+        </div>
+
+        <!-- Status indicator -->
+        <div class="hero-status animate-fade-up animation-delay-300">
+          <span class="status-dot animate-pulse-green"></span>
+          <span class="font-mono" style="font-size: 0.72rem; color: var(--color-fg-muted);">
+            [STATUS] Available for work
+          </span>
+        </div>
+
+      </div>
+
+      <!-- Right: logo -->
+      <div class="hero-logo-wrap animate-fade-up animation-delay-225">
+        <span class="hero-logo"></span>
+      </div>
+
     </div>
-
-    <!-- Status indicator -->
-    <div class="hero-status animate-fade-up animation-delay-300">
-      <span class="status-dot animate-pulse-green"></span>
-      <span class="font-mono" style="font-size: 0.72rem; color: var(--color-fg-muted);">
-        [STATUS] Available for work
-      </span>
-    </div>
-
   </div>
 </section>
 
@@ -110,6 +122,56 @@ import CmdButton from './ui/CmdButton.astro';
     height: 500px;
     background: radial-gradient(circle, rgba(0,255,135,0.04) 0%, transparent 70%);
     pointer-events: none;
+  }
+
+  /* ── Two-column grid ── */
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: center;
+    gap: 3rem;
+  }
+  @media (min-width: 768px) {
+    .hero-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* ── Logo right column ── */
+  .hero-logo-wrap {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  @media (min-width: 768px) {
+    .hero-logo-wrap {
+      display: flex;
+    }
+  }
+
+  /* Radial glow behind logo */
+  .hero-logo-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -15%;
+    background: radial-gradient(circle, rgba(0, 255, 135, 0.07) 0%, transparent 65%);
+    pointer-events: none;
+    transition: background 0.3s;
+  }
+
+  .hero-logo {
+    display: block;
+    width: clamp(200px, 28vw, 340px);
+    height: clamp(200px, 28vw, 340px);
+    background-color: var(--color-primary);
+    -webkit-mask: url('/assets/gula-white.svg') center / contain no-repeat;
+    mask: url('/assets/gula-white.svg') center / contain no-repeat;
+    opacity: 0.88;
+    transition: background-color 0.3s, opacity 0.3s;
+  }
+  .hero-logo-wrap:hover .hero-logo {
+    opacity: 1;
   }
 
   .boot-line {

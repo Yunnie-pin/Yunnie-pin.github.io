@@ -1,4 +1,6 @@
 ---
+import ThemePicker from '../components/ThemePicker.astro';
+
 interface Props {
   title?: string;
   description?: string;
@@ -56,6 +58,31 @@ const canonicalURL = Astro.url;
       "knowsAbout": ["PHP", "Laravel", "Python", "MySQL", "PostgreSQL", "REST API", "Git", "Docker"]
     })} />
 
+    <!-- Anti-flash: apply saved theme before first paint -->
+    <script is:inline>
+      (function () {
+        var T = {
+          phosphor: { c: '#00FF87', d: '#00C864', r: '0,255,135'   },
+          matrix:   { c: '#00FF41', d: '#00CC33', r: '0,255,65'    },
+          dracula:  { c: '#50FA7B', d: '#3DC95F', r: '80,250,123'  },
+          cyan:     { c: '#00E5FF', d: '#00B8CC', r: '0,229,255'   },
+          lime:     { c: '#A8FF3E', d: '#86CC2F', r: '168,255,62'  },
+          electric: { c: '#39FF14', d: '#2BCC0F', r: '57,255,20'   },
+        };
+        var key = localStorage.getItem('portfolio-theme') || 'phosphor';
+        var t = T[key];
+        if (t && key !== 'phosphor') {
+          var s = document.documentElement.style;
+          s.setProperty('--color-primary',     t.c);
+          s.setProperty('--color-primary-dim', t.d);
+          s.setProperty('--glow-sm',    '0 0 8px  rgba(' + t.r + ', 0.15)');
+          s.setProperty('--glow-md',    '0 0 16px rgba(' + t.r + ', 0.20)');
+          s.setProperty('--glow-lg',    '0 0 32px rgba(' + t.r + ', 0.25)');
+          s.setProperty('--glow-focus', '0 0 0 2px rgba(' + t.r + ', 0.40)');
+        }
+      })();
+    </script>
+
     <!-- Google Fonts: JetBrains Mono + Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -80,7 +107,10 @@ const canonicalURL = Astro.url;
 
     <!-- Navbar -->
     <nav class="navbar">
-      <a href="#hero" class="nav-logo">~/arifin</a>
+      <a href="#hero" class="nav-logo">
+        <span class="nav-logo-img" aria-hidden="true"></span>
+        ~/arifin
+      </a>
 
       <ul class="nav-links" id="nav-links">
         <li><a href="#about"      class="nav-link" data-section="about"     >// about</a></li>
@@ -101,6 +131,9 @@ const canonicalURL = Astro.url;
     <main style="padding-top: 56px;">
       <slot />
     </main>
+
+    <!-- Theme picker -->
+    <ThemePicker />
 
     <!-- Back to top -->
     <button id="back-to-top" class="back-to-top font-mono" aria-label="Back to top">[↑ top]</button>
