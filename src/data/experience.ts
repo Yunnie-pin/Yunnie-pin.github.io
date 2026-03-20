@@ -33,8 +33,8 @@ export const experiences: Experience[] = [
     ],
   },
   {
-    company:  "Fullstack Developer",
-    role:     "PT Baracipta Esa Engineering",
+    company:  "PT Baracipta Esa Engineering",
+    role:     "Fullstack Developer",
     period:   "Aug 2023 - Dec 2023",
     location: "Yogyakarta, Indonesia",
     current:  false,
