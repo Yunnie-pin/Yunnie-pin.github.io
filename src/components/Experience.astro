@@ -1,0 +1,264 @@
+---
+import TerminalCard from './ui/TerminalCard.astro';
+
+interface Experience {
+  company:      string;
+  role:         string;
+  period:       string;
+  location:     string;
+  current:      boolean;
+  achievements: string[];
+}
+
+const experiences: Experience[] = [
+  {
+    company:  "Nama Perusahaan",
+    role:     "Backend Developer",
+    period:   "2023 — Present",
+    location: "Remote / Indonesia",
+    current:  true,
+    achievements: [
+      "Bangun dan maintain REST API untuk aplikasi mobile (10k+ users)",
+      "Optimalkan query MySQL — kurangi response time sebesar 40%",
+      "Implementasi autentikasi JWT dan manajemen role-based access",
+    ],
+  },
+  {
+    company:  "Nama Perusahaan",
+    role:     "Junior Backend Developer",
+    period:   "2021 — 2023",
+    location: "Jakarta, Indonesia",
+    current:  false,
+    achievements: [
+      "Kembangkan tools internal berbasis PHP & Laravel",
+      "Migrasi sistem legacy ke arsitektur Laravel MVC",
+      "Integrasi payment gateway dan third-party API",
+    ],
+  },
+  {
+    company:  "Freelance",
+    role:     "Web Developer",
+    period:   "2020 — 2021",
+    location: "Remote",
+    current:  false,
+    achievements: [
+      "Bangun website untuk klien UMKM dengan Laravel & Bootstrap",
+      "Desain skema database MySQL untuk sistem manajemen inventaris",
+    ],
+  },
+];
+---
+
+<section id="experience" class="section">
+  <div class="container">
+
+    <p class="ascii-divider"><!-- ─────────────────────────────── --></p>
+    <h2 class="section-heading glitch" data-text="// experience">// experience</h2>
+    <p class="section-subheading">Perjalanan karir dan pengalaman profesional</p>
+
+    <div class="timeline" data-stagger>
+      {experiences.map((exp, i) => (
+        <div class={`timeline-item ${exp.current ? 'current' : ''}`}>
+
+          <!-- Timeline dot + line -->
+          <div class="timeline-connector">
+            <div class="timeline-dot">
+              {exp.current && <div class="dot-pulse"></div>}
+            </div>
+            {i < experiences.length - 1 && <div class="timeline-line"></div>}
+          </div>
+
+          <!-- Content -->
+          <div class="timeline-content">
+            <TerminalCard
+              title={`~/experience/${exp.company.toLowerCase().replace(/ /g, '-')}`}
+              class="exp-card"
+            >
+              <div class="exp-body">
+
+                <!-- Header -->
+                <div class="exp-header">
+                  <div>
+                    <h3 class="exp-role font-mono">{exp.role}</h3>
+                    <p class="exp-company">
+                      <span style="color: var(--color-primary);">@</span>
+                      {exp.company}
+                    </p>
+                  </div>
+                  <div class="exp-meta">
+                    <span class="exp-period font-mono">{exp.period}</span>
+                    <span class="exp-location font-mono">{exp.location}</span>
+                    {exp.current && (
+                      <span class="exp-badge font-mono">[CURRENT]</span>
+                    )}
+                  </div>
+                </div>
+
+                <!-- Achievements -->
+                <ul class="exp-achievements">
+                  {exp.achievements.map((item) => (
+                    <li class="exp-achievement-item">
+                      <span style="color: var(--color-primary); flex-shrink: 0;">▸</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+
+              </div>
+            </TerminalCard>
+          </div>
+
+        </div>
+      ))}
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .timeline-item {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+  }
+
+  /* ── Connector (dot + line) ── */
+  .timeline-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    padding-top: 1.1rem; /* align with card title bar */
+  }
+
+  .timeline-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    background: var(--color-panel);
+    position: relative;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .timeline-item.current .timeline-dot {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    box-shadow: 0 0 10px rgba(0, 255, 135, 0.40);
+  }
+
+  /* Pulsing ring for current position */
+  .dot-pulse {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid var(--color-primary);
+    opacity: 0;
+    animation: dotPulse 2s ease-out infinite;
+  }
+
+  @keyframes dotPulse {
+    0%   { opacity: 0.6; transform: scale(1); }
+    100% { opacity: 0;   transform: scale(1.8); }
+  }
+
+  .timeline-line {
+    width: 1px;
+    flex: 1;
+    min-height: 1.5rem;
+    background: var(--color-border);
+    margin: 4px 0;
+  }
+
+  /* ── Card content ── */
+  .timeline-content {
+    flex: 1;
+    padding-bottom: 1.25rem;
+  }
+
+  .exp-card {
+    width: 100%;
+  }
+
+  .exp-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .exp-role {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-fg);
+    margin-bottom: 4px;
+  }
+
+  .exp-company {
+    font-size: 0.875rem;
+    color: var(--color-fg-muted);
+  }
+
+  .exp-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .exp-period {
+    font-size: 0.75rem;
+    color: var(--color-fg-muted);
+  }
+
+  .exp-location {
+    font-size: 0.68rem;
+    color: var(--color-fg-dim);
+  }
+
+  .exp-badge {
+    font-size: 0.65rem;
+    color: var(--color-primary);
+    border: 1px solid rgba(0, 255, 135, 0.30);
+    background: rgba(0, 255, 135, 0.07);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  .exp-achievements {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .exp-achievement-item {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--color-fg-muted);
+    line-height: 1.6;
+  }
+
+  /* Mobile: hide connector, stack vertically */
+  @media (max-width: 480px) {
+    .timeline-connector { display: none; }
+    .timeline-item      { gap: 0; }
+    .timeline-content   { padding-bottom: 0.75rem; }
+  }
+</style>

@@ -8,6 +8,10 @@ const {
   title = "Arifin Yunianta — Backend Developer",
   description = "Personal portfolio of Arifin Yunianta, a backend developer specializing in PHP, Laravel, Python, and MySQL.",
 } = Astro.props;
+
+const siteBase = Astro.site ?? new URL('https://yunnie-pin.github.io');
+const ogImage = new URL('/assets/og-image.png', siteBase).toString();
+const canonicalURL = Astro.url;
 ---
 
 <!doctype html>
@@ -18,7 +22,39 @@ const {
     <meta name="description" content={description} />
     <meta name="author" content="Arifin Yunianta" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonicalURL} />
     <title>{title}</title>
+
+    <!-- Open Graph -->
+    <meta property="og:title"       content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type"        content="website" />
+    <meta property="og:url"         content={canonicalURL} />
+    <meta property="og:image"       content={ogImage} />
+    <meta property="og:site_name"   content="Arifin Yunianta" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image"       content={ogImage} />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Arifin Yunianta",
+      "jobTitle": "Backend Developer",
+      "url": "https://yunnie-pin.github.io",
+      "description": description,
+      "image": ogImage,
+      "sameAs": [
+        "https://github.com/Yunnie-pin",
+        "https://linkedin.com/in/arifin-yunianta",
+        "https://instagram.com/yunnie_pin"
+      ],
+      "knowsAbout": ["PHP", "Laravel", "Python", "MySQL", "PostgreSQL", "REST API", "Git", "Docker"]
+    })} />
 
     <!-- Google Fonts: JetBrains Mono + Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -29,23 +65,45 @@ const {
     />
   </head>
   <body>
+    <!-- Custom cursor -->
+    <div id="cursor-dot"  aria-hidden="true"></div>
+    <div id="cursor-ring" aria-hidden="true"></div>
+
+    <!-- Scroll progress bar -->
+    <div id="scroll-progress" aria-hidden="true"></div>
+
     <!-- CRT scan line overlay (subtle) -->
     <div class="crt-overlay" aria-hidden="true"></div>
+
+    <!-- Mobile overlay backdrop -->
+    <div id="mobile-overlay" class="mobile-overlay" aria-hidden="true"></div>
 
     <!-- Navbar -->
     <nav class="navbar">
       <a href="#hero" class="nav-logo">~/arifin</a>
-      <ul class="nav-links">
-        <li><a href="#about"    class="nav-link">// about</a></li>
-        <li><a href="#projects" class="nav-link">// projects</a></li>
-        <li><a href="#contact"  class="nav-link">// contact</a></li>
+
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#about"      class="nav-link" data-section="about"     >// about</a></li>
+        <li><a href="#experience" class="nav-link" data-section="experience">// experience</a></li>
+        <li><a href="#projects"   class="nav-link" data-section="projects"  >// projects</a></li>
+        <li><a href="#contact"    class="nav-link" data-section="contact"   >// contact</a></li>
       </ul>
+
+      <!-- Hamburger (mobile) -->
+      <button id="hamburger" class="hamburger" aria-label="Toggle navigation" aria-expanded="false">
+        <span class="ham-bar"></span>
+        <span class="ham-bar"></span>
+        <span class="ham-bar"></span>
+      </button>
     </nav>
 
     <!-- Page content -->
     <main style="padding-top: 56px;">
       <slot />
     </main>
+
+    <!-- Back to top -->
+    <button id="back-to-top" class="back-to-top font-mono" aria-label="Back to top">[↑ top]</button>
 
     <!-- Footer -->
     <footer style="border-top: 1px solid var(--color-border); padding: 1.5rem; text-align: center;">
@@ -55,6 +113,148 @@ const {
     </footer>
   </body>
 </html>
+
+<script>
+  // ── Scroll Progress Bar ───────────────────────────────────────────────────
+  const progressBar = document.getElementById('scroll-progress');
+  function updateProgress() {
+    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0;
+    if (progressBar) progressBar.style.width = `${pct}%`;
+  }
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  updateProgress();
+
+  // ── Scroll-Spy ────────────────────────────────────────────────────────────
+  const navLinks = document.querySelectorAll<HTMLAnchorElement>('.nav-link[data-section]');
+  const sections = document.querySelectorAll<HTMLElement>('section[id]');
+
+  const spyObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          navLinks.forEach((link) => {
+            link.classList.toggle('active', link.dataset.section === entry.target.id);
+          });
+        }
+      });
+    },
+    { threshold: 0.35, rootMargin: '-56px 0px 0px 0px' }
+  );
+  sections.forEach((s) => spyObserver.observe(s));
+
+  // ── Hamburger Menu ────────────────────────────────────────────────────────
+  const hamburger = document.getElementById('hamburger') as HTMLButtonElement | null;
+  const navLinksEl = document.getElementById('nav-links') as HTMLUListElement | null;
+  const overlay = document.getElementById('mobile-overlay') as HTMLDivElement | null;
+
+  function closeMenu() {
+    navLinksEl?.classList.remove('open');
+    overlay?.classList.remove('visible');
+    hamburger?.classList.remove('open');
+    hamburger?.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+
+  hamburger?.addEventListener('click', () => {
+    const isOpen = navLinksEl?.classList.contains('open');
+    if (isOpen) {
+      closeMenu();
+    } else {
+      navLinksEl?.classList.add('open');
+      overlay?.classList.add('visible');
+      hamburger.classList.add('open');
+      hamburger.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+  });
+
+  overlay?.addEventListener('click', closeMenu);
+  navLinksEl?.querySelectorAll('.nav-link').forEach((link) => {
+    link.addEventListener('click', closeMenu);
+  });
+
+  // ── Scroll Reveal ─────────────────────────────────────────────────────────
+  const scrollRevealObs = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target as HTMLElement;
+      if (el.hasAttribute('data-stagger')) {
+        Array.from(el.children).forEach((child) => child.classList.add('visible'));
+      } else {
+        el.classList.add('visible');
+      }
+      scrollRevealObs.unobserve(el);
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+  // Section headings
+  document.querySelectorAll<HTMLElement>('.section-heading, .section-subheading').forEach((el) => {
+    el.classList.add('will-reveal');
+    if (el.classList.contains('section-subheading')) el.style.transitionDelay = '80ms';
+    scrollRevealObs.observe(el);
+  });
+
+  // Stagger grids
+  document.querySelectorAll<HTMLElement>('[data-stagger]').forEach((grid) => {
+    Array.from(grid.children).forEach((child, i) => {
+      const el = child as HTMLElement;
+      el.classList.add('will-reveal');
+      el.style.transitionDelay = `${i * 90}ms`;
+    });
+    scrollRevealObs.observe(grid);
+  });
+
+  // ── Back to Top ───────────────────────────────────────────────────────────
+  const backToTop = document.getElementById('back-to-top') as HTMLButtonElement | null;
+
+  window.addEventListener('scroll', () => {
+    if (backToTop) {
+      backToTop.classList.toggle('visible', window.scrollY > 300);
+    }
+  }, { passive: true });
+
+  backToTop?.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ── Custom Cursor ─────────────────────────────────────────────────────────
+  if (window.matchMedia('(pointer: fine)').matches) {
+    const dot  = document.getElementById('cursor-dot')  as HTMLElement | null;
+    const ring = document.getElementById('cursor-ring') as HTMLElement | null;
+    if (dot && ring) {
+      let mouseX = -100, mouseY = -100;
+      let ringX  = -100, ringY  = -100;
+
+      // top/left in CSS already offsets by -half, so translate directly to cursor coords
+      document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        dot.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+        dot.classList.add('active');
+        ring.classList.add('active');
+      }, { passive: true });
+
+      document.addEventListener('mouseleave', () => {
+        dot.classList.remove('active');
+        ring.classList.remove('active');
+      });
+      document.addEventListener('mouseenter', () => {
+        dot.classList.add('active');
+        ring.classList.add('active');
+      });
+
+      function animateRing() {
+        ringX += (mouseX - ringX) * 0.14;
+        ringY += (mouseY - ringY) * 0.14;
+        ring.style.transform = `translate(${ringX}px, ${ringY}px)`;
+        requestAnimationFrame(animateRing);
+      }
+      animateRing();
+
+    }
+  }
+</script>
 
 <style is:global>
   @import "../styles/global.css";

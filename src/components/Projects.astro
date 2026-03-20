@@ -56,6 +56,9 @@ const statusColor: Record<Project['status'], string> = {
   wip:      'var(--color-yellow)',
   archived: 'var(--color-fg-dim)',
 };
+
+// Collect unique tech tags for filter
+const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
 ---
 
 <section id="projects" class="section" style="background: var(--color-void);">
@@ -63,13 +66,28 @@ const statusColor: Record<Project['status'], string> = {
 
     <!-- Heading -->
     <p class="ascii-divider"><!-- ─────────────────────────────── --></p>
-    <h2 class="section-heading">// projects</h2>
+    <h2 class="section-heading glitch" data-text="// projects">// projects</h2>
     <p class="section-subheading">Beberapa proyek yang pernah saya kerjakan</p>
 
+    <!-- Filter bar -->
+    <div class="filter-bar" id="filter-bar">
+      <button class="filter-btn active" data-filter="all">[ALL]</button>
+      <button class="filter-btn" data-filter="status:live">[LIVE]</button>
+      <button class="filter-btn" data-filter="status:wip">[WIP]</button>
+      <button class="filter-btn" data-filter="status:archived">[ARCHIVED]</button>
+      {allTechs.map((tech) => (
+        <button class="filter-btn" data-filter={`tech:${tech}`}>[{tech}]</button>
+      ))}
+    </div>
+
     <!-- Bento grid -->
-    <div class="projects-grid">
-      {projects.map((project, i) => (
-        <div class={`project-item ${project.featured ? 'featured' : ''}`}>
+    <div class="projects-grid" id="projects-grid">
+      {projects.map((project) => (
+        <div
+          class={`project-item ${project.featured ? 'featured' : ''}`}
+          data-status={project.status}
+          data-tech={project.tech.join(',')}
+        >
           <TerminalCard title={`~/projects/${project.title.toLowerCase().replace(/ /g, '-')}`} class="h-full">
             <div class="project-body">
 
@@ -89,7 +107,7 @@ const statusColor: Record<Project['status'], string> = {
 
               <!-- Tech badges -->
               <div class="project-tech">
-                {project.tech.map(t => (
+                {project.tech.map((t) => (
                   <Badge variant="primary">[{t}]</Badge>
                 ))}
               </div>
@@ -133,6 +151,60 @@ const statusColor: Record<Project['status'], string> = {
   </div>
 </section>
 
+<script>
+  // ── On-scroll Reveal ───────────────────────────────────────────────────────
+  const items = document.querySelectorAll<HTMLElement>('.project-item');
+
+  const revealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.1 }
+  );
+  items.forEach((item) => revealObserver.observe(item));
+
+  // ── Filter ─────────────────────────────────────────────────────────────────
+  const filterBar = document.getElementById('filter-bar');
+  const allItems = Array.from(document.querySelectorAll<HTMLElement>('.project-item'));
+
+  filterBar?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.filter-btn');
+    if (!btn) return;
+
+    // Update active button
+    filterBar.querySelectorAll('.filter-btn').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const filter = btn.dataset.filter ?? 'all';
+
+    allItems.forEach((item) => {
+      const status = item.dataset.status ?? '';
+      const techs  = (item.dataset.tech ?? '').split(',');
+
+      let show = true;
+      if (filter === 'all') {
+        show = true;
+      } else if (filter.startsWith('status:')) {
+        show = status === filter.replace('status:', '');
+      } else if (filter.startsWith('tech:')) {
+        show = techs.includes(filter.replace('tech:', ''));
+      }
+
+      item.style.display = show ? '' : 'none';
+
+      // Re-trigger reveal animation for newly shown items
+      if (show && !item.classList.contains('visible')) {
+        item.classList.add('visible');
+      }
+    });
+  });
+</script>
+
 <style>
   .projects-grid {
     display: grid;
@@ -153,14 +225,19 @@ const statusColor: Record<Project['status'], string> = {
     }
   }
 
+  /* On-scroll animation states (overrides global) */
   .project-item {
-    animation: fadeUp 0.4s ease-out forwards;
     opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
   }
-  .project-item:nth-child(1) { animation-delay: 0ms; }
-  .project-item:nth-child(2) { animation-delay: 75ms; }
-  .project-item:nth-child(3) { animation-delay: 150ms; }
-  .project-item:nth-child(4) { animation-delay: 225ms; }
+  .project-item.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .project-item:nth-child(2) { transition-delay: 75ms;  }
+  .project-item:nth-child(3) { transition-delay: 150ms; }
+  .project-item:nth-child(4) { transition-delay: 225ms; }
 
   .h-full { height: 100%; }
 
@@ -211,6 +288,6 @@ const statusColor: Record<Project['status'], string> = {
     transition: var(--transition);
   }
   .project-link:hover {
-    text-shadow: 0 0 8px rgba(0,255,135,0.50);
+    text-shadow: 0 0 8px rgba(0, 255, 135, 0.50);
   }
 </style>

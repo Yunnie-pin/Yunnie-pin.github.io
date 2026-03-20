@@ -16,22 +16,30 @@ const techStack = [
   { name: "Bootstrap",  variant: "default" as const },
   { name: "JavaScript", variant: "default" as const },
 ];
+
 ---
 
-<section id="about" class="section">
+<section id="about" class="section"  style="background: var(--color-void);">
   <div class="container">
 
     <!-- Heading -->
     <p class="ascii-divider"><!-- ─────────────────────────────── --></p>
-    <h2 class="section-heading">// about.me</h2>
+    <h2 class="section-heading glitch" data-text="// about.me">// about.me</h2>
     <p class="section-subheading">Sedikit tentang saya dan teknologi yang saya gunakan</p>
 
     <!-- Grid layout -->
-    <div class="about-grid">
+    <div class="about-grid" data-stagger>
 
       <!-- Bio card -->
       <TerminalCard title="~/about/bio.md" class="bio-card">
         <div class="bio-content">
+
+          <!-- Profile avatar -->
+          <div class="profile-avatar">
+            <img src="/assets/foto.jpg" alt="Arifin Yunianta" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+            <div class="avatar-fallback">AY</div>
+          </div>
+
           <p class="font-mono" style="color: var(--color-fg-muted); font-size: 0.8rem; margin-bottom: 1rem;">
             <span style="color: var(--color-primary);"># </span>Arifin Yunianta
           </p>
@@ -89,6 +97,7 @@ const techStack = [
       </TerminalCard>
 
     </div>
+
   </div>
 </section>
 
@@ -102,10 +111,6 @@ const techStack = [
     .about-grid {
       grid-template-columns: 1fr 1fr;
     }
-  }
-
-  .bio-content, .stack-content {
-    /* padding is handled by card-body */
   }
 
   .quick-stats {

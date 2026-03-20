@@ -38,10 +38,10 @@ const socials = [
 
     <!-- Heading -->
     <p class="ascii-divider"><!-- ─────────────────────────────── --></p>
-    <h2 class="section-heading">// contact</h2>
+    <h2 class="section-heading glitch" data-text="// contact">// contact</h2>
     <p class="section-subheading">Mari terhubung dan berkolaborasi</p>
 
-    <div class="contact-grid">
+    <div class="contact-grid" data-stagger>
 
       <!-- Left: Message -->
       <TerminalCard title="~/contact/message.txt">
@@ -59,9 +59,14 @@ const socials = [
             <p class="font-mono" style="font-size: 0.8rem; color: var(--color-fg-muted);">
               <span style="color: var(--color-primary);">$</span> echo $EMAIL
             </p>
-            <p class="font-mono" style="font-size: 0.9rem; color: var(--color-cyan); margin-top: 4px;">
-              arifin@example.com
-            </p>
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 4px; flex-wrap: wrap;">
+              <p class="font-mono" style="font-size: 0.9rem; color: var(--color-cyan);">
+                arifin@example.com
+              </p>
+              <button id="copy-email-btn" class="copy-btn font-mono" data-email="arifin@example.com">
+                [copy]
+              </button>
+            </div>
           </div>
 
           <div class="font-mono" style="font-size: 0.75rem; color: var(--color-fg-dim);">
@@ -99,7 +104,45 @@ const socials = [
   </div>
 </section>
 
+<script>
+  const copyBtn = document.getElementById('copy-email-btn') as HTMLButtonElement | null;
+  copyBtn?.addEventListener('click', async () => {
+    const email = copyBtn.dataset.email ?? '';
+    try {
+      await navigator.clipboard.writeText(email);
+      copyBtn.textContent = '[copied!]';
+      copyBtn.classList.add('copied');
+    } catch {
+      copyBtn.textContent = '[error]';
+    }
+    setTimeout(() => {
+      copyBtn.textContent = '[copy]';
+      copyBtn.classList.remove('copied');
+    }, 2000);
+  });
+</script>
+
 <style>
+  .copy-btn {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-fg-dim);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .copy-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+  .copy-btn.copied {
+    border-color: rgba(0, 255, 135, 0.40);
+    color: var(--color-primary);
+    background: rgba(0, 255, 135, 0.08);
+  }
+
   .contact-grid {
     display: grid;
     grid-template-columns: 1fr;
