@@ -1,0 +1,34 @@
+---
+interface Props {
+  /** Prompt prefix character. Default: '$' */
+  prefix?: '$' | '>' | '#';
+  /** Command or text after the prefix */
+  command: string;
+  /** Optional trailing comment shown as # text */
+  comment?: string;
+  /** Pass-through style for spacing overrides */
+  style?: string;
+}
+
+const { prefix = '$', command, comment, style } = Astro.props;
+
+const prefixColor =
+  prefix === '>' ? 'var(--color-cyan)' : 'var(--color-primary)';
+---
+
+<p class="t-prompt font-mono" style={style}>
+  <span style={`color: ${prefixColor};`}>{prefix}</span>
+  <span class="t-cmd"> {command}</span>
+  {comment && <span class="t-comment"> # {comment}</span>}
+</p>
+
+<style>
+  .t-prompt {
+    font-size: 0.8rem;
+    color: var(--color-fg-muted);
+    margin: 0;
+  }
+  .t-comment {
+    color: var(--color-fg-dim);
+  }
+</style>

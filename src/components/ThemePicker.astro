@@ -1,0 +1,233 @@
+---
+const themes = [
+  { name: 'Phosphor', key: 'phosphor', color: '#00FF87', dim: '#00C864', rgb: '0,255,135'   },
+  { name: 'Matrix',   key: 'matrix',   color: '#00FF41', dim: '#00CC33', rgb: '0,255,65'    },
+  { name: 'Dracula',  key: 'dracula',  color: '#50FA7B', dim: '#3DC95F', rgb: '80,250,123'  },
+  { name: 'Cyan',     key: 'cyan',     color: '#00E5FF', dim: '#00B8CC', rgb: '0,229,255'   },
+  { name: 'Lime',     key: 'lime',     color: '#A8FF3E', dim: '#86CC2F', rgb: '168,255,62'  },
+  { name: 'Electric', key: 'electric', color: '#39FF14', dim: '#2BCC0F', rgb: '57,255,20'   },
+];
+---
+
+<div class="theme-picker" id="theme-picker">
+  <!-- Panel (rendered above button via flex order) -->
+  <div class="theme-panel" id="theme-panel" role="dialog" aria-label="Theme picker">
+    <p class="theme-panel-header font-mono">
+      <span style="color: var(--color-primary);">$</span> set --theme
+    </p>
+    <div class="theme-swatches" id="theme-swatches">
+      {themes.map((t) => (
+        <button
+          class="swatch"
+          data-theme={t.key}
+          data-color={t.color}
+          data-dim={t.dim}
+          data-rgb={t.rgb}
+          style={`--sw: ${t.color};`}
+          title={t.name}
+          aria-label={`Theme: ${t.name}`}
+        >
+          <span class="swatch-dot"></span>
+          <span class="swatch-name font-mono">{t.name}</span>
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <!-- Toggle button -->
+  <button
+    class="theme-toggle font-mono"
+    id="theme-toggle"
+    aria-label="Customize theme"
+    aria-expanded="false"
+  >
+    <span class="theme-toggle-dot" id="theme-toggle-dot"></span>
+    [theme]
+  </button>
+</div>
+
+<script>
+  const THEMES: Record<string, { color: string; dim: string; rgb: string }> = {
+    phosphor: { color: '#00FF87', dim: '#00C864', rgb: '0,255,135'   },
+    matrix:   { color: '#00FF41', dim: '#00CC33', rgb: '0,255,65'    },
+    dracula:  { color: '#50FA7B', dim: '#3DC95F', rgb: '80,250,123'  },
+    cyan:     { color: '#00E5FF', dim: '#00B8CC', rgb: '0,229,255'   },
+    lime:     { color: '#A8FF3E', dim: '#86CC2F', rgb: '168,255,62'  },
+    electric: { color: '#39FF14', dim: '#2BCC0F', rgb: '57,255,20'   },
+  };
+
+  const LS_KEY = 'portfolio-theme';
+
+  function applyTheme(key: string) {
+    const t = THEMES[key];
+    if (!t) return;
+    const root = document.documentElement;
+    root.style.setProperty('--color-primary',     t.color);
+    root.style.setProperty('--color-primary-dim', t.dim);
+    root.style.setProperty('--glow-sm',    `0 0 8px  rgba(${t.rgb}, 0.15)`);
+    root.style.setProperty('--glow-md',    `0 0 16px rgba(${t.rgb}, 0.20)`);
+    root.style.setProperty('--glow-lg',    `0 0 32px rgba(${t.rgb}, 0.25)`);
+    root.style.setProperty('--glow-focus', `0 0 0 2px rgba(${t.rgb}, 0.40)`);
+
+    // Sync toggle dot color
+    const dot = document.getElementById('theme-toggle-dot') as HTMLElement | null;
+    if (dot) dot.style.background = t.color;
+
+    // Sync active swatch
+    document.querySelectorAll('.swatch').forEach((el) => {
+      (el as HTMLElement).classList.toggle('active', (el as HTMLElement).dataset.theme === key);
+    });
+
+    localStorage.setItem(LS_KEY, key);
+  }
+
+  // Restore saved theme on load
+  applyTheme(localStorage.getItem(LS_KEY) ?? 'phosphor');
+
+  // Toggle panel open/close
+  const toggle = document.getElementById('theme-toggle');
+  const panel  = document.getElementById('theme-panel');
+  const picker = document.getElementById('theme-picker');
+
+  toggle?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = panel?.classList.toggle('open') ?? false;
+    toggle.setAttribute('aria-expanded', String(open));
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!picker?.contains(e.target as Node)) {
+      panel?.classList.remove('open');
+      toggle?.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      panel?.classList.remove('open');
+      toggle?.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // Apply theme on swatch click
+  document.getElementById('theme-swatches')?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('.swatch');
+    if (!btn?.dataset.theme) return;
+    applyTheme(btn.dataset.theme);
+  });
+</script>
+
+<style>
+  .theme-picker {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  /* ── Toggle button ── */
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-panel);
+    color: var(--color-fg-muted);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .theme-toggle:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .theme-toggle-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+
+  /* ── Panel ── */
+  .theme-panel {
+    background: var(--color-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 0.875rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 196px;
+    opacity: 0;
+    transform: translateY(6px);
+    pointer-events: none;
+    transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+    box-shadow: var(--shadow-md);
+  }
+  .theme-panel.open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .theme-panel-header {
+    font-size: 0.72rem;
+    color: var(--color-fg-muted);
+    margin: 0;
+  }
+
+  /* ── Swatches grid ── */
+  .theme-swatches {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+  }
+
+  .swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 0.5rem 0.25rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .swatch:hover {
+    border-color: var(--sw);
+    background: var(--color-muted);
+  }
+  .swatch.active {
+    border-color: var(--sw);
+    background: var(--color-muted);
+    box-shadow: inset 0 0 0 1px var(--sw);
+  }
+
+  .swatch-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--sw);
+    box-shadow: 0 0 8px var(--sw);
+    flex-shrink: 0;
+  }
+
+  .swatch-name {
+    font-size: 0.58rem;
+    color: var(--color-fg-muted);
+    line-height: 1;
+  }
+</style>

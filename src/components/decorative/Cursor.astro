@@ -1,0 +1,12 @@
+---
+interface Props {
+  color?: string;
+}
+const { color = 'var(--color-primary)' } = Astro.props;
+---
+
+<span
+  class="animate-blink"
+  aria-hidden="true"
+  style={`display: inline-block; width: 10px; height: 1.2em; background: ${color}; vertical-align: text-bottom; margin-left: 2px;`}
+></span>

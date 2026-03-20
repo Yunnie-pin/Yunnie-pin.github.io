@@ -1,0 +1,321 @@
+---
+import TerminalCard from './ui/TerminalCard.astro';
+import Badge from './ui/Badge.astro';
+import TerminalPrompt from './ui/TerminalPrompt.astro';
+import { projects } from '../data/projects';
+import type { Project } from '../data/projects';
+
+const statusLabel: Record<Project['status'], string> = {
+  live:     '[LIVE]',
+  wip:      '[WIP]',
+  archived: '[ARCHIVED]',
+};
+const statusColor: Record<Project['status'], string> = {
+  live:     'var(--color-primary)',
+  wip:      'var(--color-yellow)',
+  archived: 'var(--color-fg-dim)',
+};
+
+// Collect unique tech tags for filter
+const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
+---
+
+<section id="projects" class="section section-bg-void">
+  <div class="container">
+
+    <!-- Heading -->
+    <p class="ascii-divider"><!-- ─────────────────────────────── --></p>
+    <h2 class="section-heading glitch" data-text="// projects">// projects</h2>
+    <p class="section-subheading">These are some of the projects I've worked on</p>
+
+    <!-- Filter bar (hidden when no projects) -->
+    {projects.length > 0 && (
+      <div class="filter-bar" id="filter-bar">
+        <button class="filter-btn active" data-filter="all">[ALL]</button>
+        <button class="filter-btn" data-filter="status:live">[LIVE]</button>
+        <button class="filter-btn" data-filter="status:wip">[WIP]</button>
+        <button class="filter-btn" data-filter="status:archived">[ARCHIVED]</button>
+        {allTechs.map((tech) => (
+          <button class="filter-btn" data-filter={`tech:${tech}`}>[{tech}]</button>
+        ))}
+      </div>
+    )}
+
+    <!-- Empty state -->
+    {projects.length === 0 && (
+      <div class="empty-state" id="empty-state-no-projects">
+        <span class="font-mono empty-icon">_</span>
+        <p class="font-mono">// no projects found</p>
+        <p class="empty-hint">Check back later.</p>
+      </div>
+    )}
+
+    <!-- Filter empty state (shown via JS) -->
+    <div class="empty-state hidden" id="empty-state-filter" aria-live="polite">
+      <span class="font-mono empty-icon">∅</span>
+      <p class="font-mono">// no results for active filter</p>
+      <p class="empty-hint">Try a different tag.</p>
+    </div>
+
+    <!-- Bento grid -->
+    <div class="projects-grid" id="projects-grid">
+      {projects.map((project) => (
+        <div
+          class={`project-item ${project.featured ? 'featured' : ''}`}
+          data-status={project.status}
+          data-tech={project.tech.join(',')}
+        >
+          <TerminalCard title={`~/projects/${project.title.toLowerCase().replace(/ /g, '-')}`} class="h-full">
+            <div class="project-body">
+
+              <!-- Header -->
+              <div class="project-header">
+                <h3 class="project-title font-mono">{project.title}</h3>
+                <span
+                  class="font-mono"
+                  style={`font-size: 0.7rem; color: ${statusColor[project.status]};`}
+                >
+                  {statusLabel[project.status]}
+                </span>
+              </div>
+
+              <!-- Description -->
+              <p class="project-desc">{project.description}</p>
+
+              <!-- Tech badges -->
+              <div class="project-tech">
+                {project.tech.map((t) => (
+                  <Badge variant="primary">[{t}]</Badge>
+                ))}
+              </div>
+
+              <!-- Links -->
+              <div class="project-links">
+                {project.url && project.url !== '#' ? (
+                  <a href={project.url} target="_blank" rel="noopener noreferrer" class="project-link font-mono">
+                    [view →]
+                  </a>
+                ) : project.url === '#' ? (
+                  <span class="project-link font-mono link-disabled">[view →]</span>
+                ) : null}
+                {project.repo && (
+                  <a
+                    href={project.repo !== '#' ? project.repo : undefined}
+                    target={project.repo !== '#' ? '_blank' : undefined}
+                    rel="noopener noreferrer"
+                    class={`project-link font-mono${project.repo === '#' ? ' link-disabled' : ''}`}
+                  >
+                    [repo →]
+                  </a>
+                )}
+              </div>
+
+            </div>
+          </TerminalCard>
+        </div>
+      ))}
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-wrap">
+      <TerminalPrompt command="git log --oneline --all" comment="more on GitHub" />
+    </div>
+
+  </div>
+</section>
+
+<script>
+  // ── On-scroll Reveal ───────────────────────────────────────────────────────
+  const items = document.querySelectorAll<HTMLElement>('.project-item');
+
+  // Skip animation if user prefers reduced motion
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    items.forEach((item) => item.classList.add('visible'));
+  } else {
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+    items.forEach((item) => revealObserver.observe(item));
+  }
+
+  // ── Filter ─────────────────────────────────────────────────────────────────
+  const filterBar = document.getElementById('filter-bar');
+  const allItems = Array.from(document.querySelectorAll<HTMLElement>('.project-item'));
+  const emptyFilter = document.getElementById('empty-state-filter');
+
+  filterBar?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.filter-btn');
+    if (!btn) return;
+
+    // Update active button
+    filterBar.querySelectorAll('.filter-btn').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const filter = btn.dataset.filter ?? 'all';
+    let visibleCount = 0;
+
+    allItems.forEach((item) => {
+      const status = item.dataset.status ?? '';
+      const techs  = (item.dataset.tech ?? '').split(',');
+
+      let show = true;
+      if (filter === 'all') {
+        show = true;
+      } else if (filter.startsWith('status:')) {
+        show = status === filter.replace('status:', '');
+      } else if (filter.startsWith('tech:')) {
+        show = techs.includes(filter.replace('tech:', ''));
+      }
+
+      item.style.display = show ? '' : 'none';
+
+      if (show) {
+        visibleCount++;
+        if (!item.classList.contains('visible')) {
+          item.classList.add('visible');
+        }
+      }
+    });
+
+    // Toggle filter empty state
+    if (emptyFilter) {
+      emptyFilter.classList.toggle('hidden', visibleCount > 0);
+    }
+  });
+</script>
+
+<style>
+  .projects-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  @media (min-width: 640px) {
+    .projects-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (min-width: 1024px) {
+    .projects-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .project-item.featured {
+      grid-column: span 2;
+    }
+  }
+
+  /* On-scroll animation states (overrides global) */
+  .project-item {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+  }
+  .project-item.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .project-item:nth-child(2) { transition-delay: 75ms;  }
+  .project-item:nth-child(3) { transition-delay: 150ms; }
+  .project-item:nth-child(4) { transition-delay: 225ms; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project-item {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+
+  .h-full { height: 100%; }
+
+  .project-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    height: 100%;
+  }
+
+  .project-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .project-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-fg);
+  }
+
+  .project-desc {
+    color: var(--color-fg-muted);
+    font-size: 0.875rem;
+    line-height: 1.7;
+    flex: 1;
+  }
+
+  .project-tech {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .project-links {
+    display: flex;
+    gap: 1rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+  }
+
+  .project-link {
+    font-size: 0.78rem;
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: var(--transition);
+  }
+  .project-link:hover {
+    text-shadow: 0 0 8px rgba(0, 255, 135, 0.50);
+  }
+
+  .cta-wrap {
+    text-align: center;
+    margin-top: 2rem;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 3rem 1rem;
+    color: var(--color-fg-dim);
+    text-align: center;
+  }
+  .empty-icon {
+    font-size: 2rem;
+    color: var(--color-primary);
+    opacity: 0.5;
+    animation: blink 1.2s step-start infinite;
+  }
+  .empty-state p {
+    font-size: 0.875rem;
+    color: var(--color-fg-muted);
+  }
+  .empty-hint {
+    font-size: 0.75rem;
+    color: var(--color-fg-dim);
+    margin-top: 0.25rem;
+  }
+  .hidden {
+    display: none;
+  }
+</style>

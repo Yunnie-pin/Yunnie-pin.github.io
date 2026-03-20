@@ -1,0 +1,382 @@
+---
+import ThemePicker from '../components/ThemePicker.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Arifin Yunianta — Backend Developer",
+  description = "Personal portfolio of Arifin Yunianta, a backend developer specializing in PHP, Laravel, Python, and MySQL.",
+} = Astro.props;
+
+const siteBase = Astro.site ?? new URL('https://yunnie-pin.github.io');
+const ogImage = new URL('/assets/og-image.png', siteBase).toString();
+const canonicalURL = Astro.url;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="author" content="Arifin Yunianta" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonicalURL} />
+    <title>{title}</title>
+
+    <!-- Open Graph -->
+    <meta property="og:title"       content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type"        content="website" />
+    <meta property="og:url"         content={canonicalURL} />
+    <meta property="og:image"       content={ogImage} />
+    <meta property="og:site_name"   content="Arifin Yunianta" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image"       content={ogImage} />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Arifin Yunianta",
+      "jobTitle": "Backend Developer",
+      "url": "https://yunnie-pin.github.io",
+      "description": description,
+      "image": ogImage,
+      "sameAs": [
+        "https://github.com/Yunnie-pin",
+        "https://linkedin.com/in/arifin-yunianta",
+        "https://instagram.com/yunnie_pin"
+      ],
+      "knowsAbout": ["PHP", "Laravel", "Python", "MySQL", "PostgreSQL", "REST API", "Git", "Docker"]
+    })} />
+
+    <!-- Anti-flash: apply saved theme before first paint -->
+    <script is:inline>
+      (function () {
+        var T = {
+          phosphor: { c: '#00FF87', d: '#00C864', r: '0,255,135'   },
+          matrix:   { c: '#00FF41', d: '#00CC33', r: '0,255,65'    },
+          dracula:  { c: '#50FA7B', d: '#3DC95F', r: '80,250,123'  },
+          cyan:     { c: '#00E5FF', d: '#00B8CC', r: '0,229,255'   },
+          lime:     { c: '#A8FF3E', d: '#86CC2F', r: '168,255,62'  },
+          electric: { c: '#39FF14', d: '#2BCC0F', r: '57,255,20'   },
+        };
+        var key = localStorage.getItem('portfolio-theme') || 'phosphor';
+        var t = T[key];
+        if (t && key !== 'phosphor') {
+          var s = document.documentElement.style;
+          s.setProperty('--color-primary',     t.c);
+          s.setProperty('--color-primary-dim', t.d);
+          s.setProperty('--glow-sm',    '0 0 8px  rgba(' + t.r + ', 0.15)');
+          s.setProperty('--glow-md',    '0 0 16px rgba(' + t.r + ', 0.20)');
+          s.setProperty('--glow-lg',    '0 0 32px rgba(' + t.r + ', 0.25)');
+          s.setProperty('--glow-focus', '0 0 0 2px rgba(' + t.r + ', 0.40)');
+        }
+      })();
+    </script>
+
+    <!-- Google Fonts: JetBrains Mono + Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- Custom cursor -->
+    <div id="cursor-dot"  aria-hidden="true"></div>
+    <div id="cursor-ring" aria-hidden="true"></div>
+
+    <!-- Scroll progress bar -->
+    <div id="scroll-progress" aria-hidden="true"></div>
+
+    <!-- CRT scan line overlay (subtle) -->
+    <div class="crt-overlay" aria-hidden="true"></div>
+
+    <!-- Mobile overlay backdrop -->
+    <div id="mobile-overlay" class="mobile-overlay" aria-hidden="true"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+      <a href="#hero" class="nav-logo">
+        <span class="nav-logo-img" aria-hidden="true"></span>
+        ~/Yunnie-pin
+      </a>
+
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#about"      class="nav-link" data-section="about"     >// about</a></li>
+        <li><a href="#experience" class="nav-link" data-section="experience">// experience</a></li>
+        <li><a href="#projects"   class="nav-link" data-section="projects"  >// projects</a></li>
+        <li><a href="#contact"    class="nav-link" data-section="contact"   >// contact</a></li>
+      </ul>
+
+      <!-- Hamburger (mobile) -->
+      <button id="hamburger" class="hamburger" aria-label="Toggle navigation" aria-expanded="false">
+        <span class="ham-bar"></span>
+        <span class="ham-bar"></span>
+        <span class="ham-bar"></span>
+      </button>
+    </nav>
+
+    <!-- Page content -->
+    <main style="padding-top: 56px;">
+      <slot />
+    </main>
+
+    <!-- Custom context menu -->
+    <div id="ctx-menu" class="ctx-menu font-mono" role="menu" aria-label="Context menu">
+      <button class="ctx-item" data-action="copy" role="menuitem">
+        <span class="ctx-item-prefix">$</span> copy
+      </button>
+      <div class="ctx-sep" role="separator"></div>
+      <button class="ctx-item" data-action="source" role="menuitem">
+        <span class="ctx-item-prefix">$</span> view-source
+      </button>
+      <button class="ctx-item" data-action="inspect" role="menuitem">
+        <span class="ctx-item-prefix">$</span> inspect element
+      </button>
+      <div class="ctx-sep" role="separator"></div>
+      <button class="ctx-item" data-action="contact" role="menuitem">
+        <span class="ctx-item-prefix">$</span> contact me
+      </button>
+      <button class="ctx-item" data-action="cv" role="menuitem">
+        <span class="ctx-item-prefix">↓</span> download cv
+      </button>
+    </div>
+
+    <!-- Theme picker -->
+    <ThemePicker />
+
+    <!-- Back to top -->
+    <button id="back-to-top" class="back-to-top font-mono" aria-label="Back to top">[↑ top]</button>
+
+    <!-- Footer -->
+    <footer style="border-top: 1px solid var(--color-border); padding: 1.5rem; text-align: center;">
+      <p class="font-mono" style="color: var(--color-fg-dim); font-size: 0.75rem;">
+        <span style="color: var(--color-primary);">$</span> echo "Built with Astro by Yunnie-pin" <span style="color: var(--color-primary);">|</span>
+      </p>
+    </footer>
+  </body>
+</html>
+
+<script>
+  // ── Scroll Progress Bar ───────────────────────────────────────────────────
+  const progressBar = document.getElementById('scroll-progress');
+  function updateProgress() {
+    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0;
+    if (progressBar) progressBar.style.width = `${pct}%`;
+  }
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  updateProgress();
+
+  // ── Scroll-Spy ────────────────────────────────────────────────────────────
+  const navLinks = document.querySelectorAll<HTMLAnchorElement>('.nav-link[data-section]');
+  const sections = document.querySelectorAll<HTMLElement>('section[id]');
+
+  const spyObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          navLinks.forEach((link) => {
+            link.classList.toggle('active', link.dataset.section === entry.target.id);
+          });
+        }
+      });
+    },
+    { threshold: 0.35, rootMargin: '-56px 0px 0px 0px' }
+  );
+  sections.forEach((s) => spyObserver.observe(s));
+
+  // ── Hamburger Menu ────────────────────────────────────────────────────────
+  const hamburger = document.getElementById('hamburger') as HTMLButtonElement | null;
+  const navLinksEl = document.getElementById('nav-links') as HTMLUListElement | null;
+  const overlay = document.getElementById('mobile-overlay') as HTMLDivElement | null;
+
+  function closeMenu() {
+    navLinksEl?.classList.remove('open');
+    overlay?.classList.remove('visible');
+    hamburger?.classList.remove('open');
+    hamburger?.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+
+  hamburger?.addEventListener('click', () => {
+    const isOpen = navLinksEl?.classList.contains('open');
+    if (isOpen) {
+      closeMenu();
+    } else {
+      navLinksEl?.classList.add('open');
+      overlay?.classList.add('visible');
+      hamburger.classList.add('open');
+      hamburger.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+  });
+
+  overlay?.addEventListener('click', closeMenu);
+  navLinksEl?.querySelectorAll('.nav-link').forEach((link) => {
+    link.addEventListener('click', closeMenu);
+  });
+
+  // ── Custom Context Menu ───────────────────────────────────────────────────
+  const ctxMenu = document.getElementById('ctx-menu') as HTMLElement | null;
+
+  function openCtx(x: number, y: number) {
+    if (!ctxMenu) return;
+    // Reset position first so size measurement is accurate
+    ctxMenu.style.left = `${x}px`;
+    ctxMenu.style.top  = `${y}px`;
+    ctxMenu.classList.add('open');
+    // Flip if overflowing viewport
+    const { width: mw, height: mh } = ctxMenu.getBoundingClientRect();
+    if (x + mw > window.innerWidth)  ctxMenu.style.left = `${x - mw}px`;
+    if (y + mh > window.innerHeight) ctxMenu.style.top  = `${y - mh}px`;
+  }
+
+  function closeCtx() { ctxMenu?.classList.remove('open'); }
+
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    // Update [copy] label based on whether text is selected
+    const hasSel = (window.getSelection()?.toString().trim().length ?? 0) > 0;
+    const copyBtn = ctxMenu?.querySelector<HTMLElement>('[data-action="copy"]');
+    if (copyBtn) {
+      copyBtn.querySelector('.ctx-item-prefix')!.textContent = hasSel ? '$' : '//';
+      copyBtn.style.opacity = hasSel ? '1' : '0.4';
+    }
+    openCtx(e.clientX, e.clientY);
+  });
+
+  document.addEventListener('click',   (e) => { if (!ctxMenu?.contains(e.target as Node)) closeCtx(); });
+  document.addEventListener('scroll',  closeCtx, { passive: true });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCtx(); });
+
+  ctxMenu?.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
+    if (!btn) return;
+    closeCtx();
+
+    switch (btn.dataset.action) {
+      case 'copy': {
+        const sel = window.getSelection()?.toString() ?? '';
+        if (sel) await navigator.clipboard.writeText(sel);
+        break;
+      }
+      case 'source':
+        window.open(`view-source:${location.href}`, '_blank');
+        break;
+      case 'inspect':
+        console.log(
+          '%c👋 Hey there, fellow developer!',
+          'color:#00FF87;font-size:16px;font-weight:bold;'
+        );
+        console.log(
+          '%cPoking around? Respect. The stack: Astro v5 + Tailwind v4 + Three.js\n%cTry typing "sudo hire me" in the hero terminal 😄',
+          'color:#8B9E8B;font-size:12px;',
+          'color:#00C8F0;font-size:12px;'
+        );
+        break;
+      case 'contact':
+        document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+        break;
+      case 'cv':
+        window.open('/assets/cv.pdf', '_blank');
+        break;
+    }
+  });
+
+  // ── Scroll Reveal ─────────────────────────────────────────────────────────
+  const scrollRevealObs = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target as HTMLElement;
+      if (el.hasAttribute('data-stagger')) {
+        Array.from(el.children).forEach((child) => child.classList.add('visible'));
+      } else {
+        el.classList.add('visible');
+      }
+      scrollRevealObs.unobserve(el);
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+  // Section headings
+  document.querySelectorAll<HTMLElement>('.section-heading, .section-subheading').forEach((el) => {
+    el.classList.add('will-reveal');
+    if (el.classList.contains('section-subheading')) el.style.transitionDelay = '80ms';
+    scrollRevealObs.observe(el);
+  });
+
+  // Stagger grids
+  document.querySelectorAll<HTMLElement>('[data-stagger]').forEach((grid) => {
+    Array.from(grid.children).forEach((child, i) => {
+      const el = child as HTMLElement;
+      el.classList.add('will-reveal');
+      el.style.transitionDelay = `${i * 90}ms`;
+    });
+    scrollRevealObs.observe(grid);
+  });
+
+  // ── Back to Top ───────────────────────────────────────────────────────────
+  const backToTop = document.getElementById('back-to-top') as HTMLButtonElement | null;
+
+  window.addEventListener('scroll', () => {
+    if (backToTop) {
+      backToTop.classList.toggle('visible', window.scrollY > 300);
+    }
+  }, { passive: true });
+
+  backToTop?.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ── Custom Cursor ─────────────────────────────────────────────────────────
+  if (window.matchMedia('(pointer: fine)').matches) {
+    const dot  = document.getElementById('cursor-dot')  as HTMLElement | null;
+    const ring = document.getElementById('cursor-ring') as HTMLElement | null;
+    if (dot && ring) {
+      let mouseX = -100, mouseY = -100;
+      let ringX  = -100, ringY  = -100;
+
+      // top/left in CSS already offsets by -half, so translate directly to cursor coords
+      document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        dot.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+        dot.classList.add('active');
+        ring.classList.add('active');
+      }, { passive: true });
+
+      document.addEventListener('mouseleave', () => {
+        dot.classList.remove('active');
+        ring.classList.remove('active');
+      });
+      document.addEventListener('mouseenter', () => {
+        dot.classList.add('active');
+        ring.classList.add('active');
+      });
+
+      function animateRing() {
+        ringX += (mouseX - ringX) * 0.14;
+        ringY += (mouseY - ringY) * 0.14;
+        ring.style.transform = `translate(${ringX}px, ${ringY}px)`;
+        requestAnimationFrame(animateRing);
+      }
+      animateRing();
+
+    }
+  }
+</script>
+
+<style is:global>
+  @import "../styles/global.css";
+</style>

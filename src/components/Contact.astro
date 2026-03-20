@@ -1,0 +1,207 @@
+---
+import TerminalCard from './ui/TerminalCard.astro';
+import TerminalPrompt from './ui/TerminalPrompt.astro';
+import { socials, email } from '../data/contact';
+---
+
+<section id="contact" class="section">
+  <div class="container">
+
+    <!-- Heading -->
+    <p class="ascii-divider"><!-- ─────────────────────────────── --></p>
+    <h2 class="section-heading glitch" data-text="// contact">// contact</h2>
+    <p class="section-subheading">Mari terhubung dan berkolaborasi</p>
+
+    <div class="contact-grid" data-stagger>
+
+      <!-- Left: Message -->
+      <TerminalCard title="~/contact/message.txt">
+        <div class="msg-body">
+          <TerminalPrompt command="cat message.txt" />
+
+          <p class="msg-text">
+            Have a technical challenge, project idea, or just want to say hi? I'm all ears! Whether it's a quick question, a potential collaboration, or just sharing cool tech stuff, feel free to reach out. Let's connect and see how we can create something awesome together!
+          </p>
+
+          <div class="inset-card">
+            <TerminalPrompt command="echo $EMAIL" />
+            <div class="email-row">
+              <p class="font-mono email-text">
+                {email}
+              </p>
+              <button id="copy-email-btn" class="copy-btn font-mono" data-email={email}>
+                [copy]
+              </button>
+            </div>
+          </div>
+
+          <div class="font-mono response-note">
+            // Response time: typically within 24 hours
+          </div>
+        </div>
+      </TerminalCard>
+
+      <!-- Right: Social links -->
+      <TerminalCard title="~/contact/socials.sh">
+        <div class="socials-body">
+          <TerminalPrompt command="ls -la socials/" style="margin-bottom: 0.25rem;" />
+
+          {socials.map((social) => (
+            <a
+              href={social.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="social-link"
+            >
+              <span class="social-icon" style={`color: ${social.color};`} set:html={social.icon} />
+              <div class="social-info">
+                <span class="font-mono social-name">{social.name}</span>
+                <span class="font-mono social-handle">{social.handle}</span>
+              </div>
+              <span class="social-arrow font-mono">→</span>
+            </a>
+          ))}
+        </div>
+      </TerminalCard>
+
+    </div>
+  </div>
+</section>
+
+<script>
+  const copyBtn = document.getElementById('copy-email-btn') as HTMLButtonElement | null;
+  copyBtn?.addEventListener('click', async () => {
+    const email = copyBtn.dataset.email ?? '';
+    try {
+      await navigator.clipboard.writeText(email);
+      copyBtn.textContent = '[copied!]';
+      copyBtn.classList.add('copied');
+    } catch {
+      copyBtn.textContent = '[error]';
+    }
+    setTimeout(() => {
+      copyBtn.textContent = '[copy]';
+      copyBtn.classList.remove('copied');
+    }, 2000);
+  });
+</script>
+
+<style>
+  .copy-btn {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-fg-dim);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .copy-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+  .copy-btn.copied {
+    border-color: rgba(0, 255, 135, 0.40);
+    color: var(--color-primary);
+    background: rgba(0, 255, 135, 0.08);
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  @media (min-width: 768px) {
+    .contact-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .social-link {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: var(--color-muted);
+    text-decoration: none;
+    transition: var(--transition);
+  }
+  .social-link:hover {
+    border-color: var(--color-border-bright);
+    background: var(--color-elevated);
+    transform: translateX(4px);
+  }
+
+  .social-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .social-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+
+  .social-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-fg);
+  }
+
+  .social-handle {
+    font-size: 0.72rem;
+    color: var(--color-fg-muted);
+  }
+
+  .social-arrow {
+    font-size: 0.9rem;
+    color: var(--color-primary);
+    opacity: 0;
+    transition: var(--transition);
+  }
+  .social-link:hover .social-arrow {
+    opacity: 1;
+  }
+
+  .msg-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .msg-text {
+    color: var(--color-fg);
+    line-height: 1.8;
+  }
+  .inset-card {
+    padding: 1rem;
+    background: var(--color-muted);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+  }
+  .email-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+  .email-text {
+    font-size: 0.9rem;
+    color: var(--color-cyan);
+  }
+  .response-note {
+    font-size: 0.75rem;
+    color: var(--color-fg-dim);
+  }
+  .socials-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+</style>

@@ -1,0 +1,39 @@
+---
+interface Props {
+  title?: string;
+  class?: string;
+  showTitlebar?: boolean;
+  noPadding?: boolean;
+}
+
+const {
+  title,
+  class: className = '',
+  showTitlebar = true,
+  noPadding = false,
+} = Astro.props;
+---
+
+<div class={`terminal-card ${className}`}>
+  {showTitlebar && (
+    <div class="terminal-titlebar">
+      <span class="terminal-dot dot-red"></span>
+      <span class="terminal-dot dot-yellow"></span>
+      <span class="terminal-dot dot-green"></span>
+      {title && (
+        <span class="font-mono" style="font-size: 0.72rem; color: var(--color-fg-muted); margin-left: 8px;">
+          {title}
+        </span>
+      )}
+    </div>
+  )}
+  <div class={noPadding ? '' : 'card-body'}>
+    <slot />
+  </div>
+</div>
+
+<style>
+  .card-body {
+    padding: 1.25rem 1.5rem;
+  }
+</style>
