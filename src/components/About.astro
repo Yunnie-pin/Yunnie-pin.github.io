@@ -1,0 +1,138 @@
+---
+import TerminalCard from './ui/TerminalCard.astro';
+import Badge from './ui/Badge.astro';
+
+const techStack = [
+  { name: "PHP",        variant: "primary" as const },
+  { name: "Laravel",    variant: "primary" as const },
+  { name: "Python",     variant: "primary" as const },
+  { name: "MySQL",      variant: "cyan"    as const },
+  { name: "PostgreSQL", variant: "cyan"    as const },
+  { name: "REST API",   variant: "cyan"    as const },
+  { name: "Git",        variant: "default" as const },
+  { name: "GitHub",     variant: "default" as const },
+  { name: "Linux",      variant: "default" as const },
+  { name: "Docker",     variant: "default" as const },
+  { name: "Bootstrap",  variant: "default" as const },
+  { name: "JavaScript", variant: "default" as const },
+];
+---
+
+<section id="about" class="section">
+  <div class="container">
+
+    <!-- Heading -->
+    <p class="ascii-divider"><!-- ─────────────────────────────── --></p>
+    <h2 class="section-heading">// about.me</h2>
+    <p class="section-subheading">Sedikit tentang saya dan teknologi yang saya gunakan</p>
+
+    <!-- Grid layout -->
+    <div class="about-grid">
+
+      <!-- Bio card -->
+      <TerminalCard title="~/about/bio.md" class="bio-card">
+        <div class="bio-content">
+          <p class="font-mono" style="color: var(--color-fg-muted); font-size: 0.8rem; margin-bottom: 1rem;">
+            <span style="color: var(--color-primary);"># </span>Arifin Yunianta
+          </p>
+          <p style="color: var(--color-fg); line-height: 1.8; margin-bottom: 1rem;">
+            Saya adalah seorang <strong style="color: var(--color-primary);">Backend Developer</strong> yang
+            passionate dalam membangun sistem yang handal dan efisien. Saya menikmati merancang
+            arsitektur database, membangun API, dan mengoptimalkan performa aplikasi.
+          </p>
+          <p style="color: var(--color-fg-muted); line-height: 1.8;">
+            Ketika tidak sedang coding, saya senang belajar teknologi baru dan berkontribusi
+            pada proyek open source.
+          </p>
+
+          <!-- Quick stats -->
+          <div class="quick-stats">
+            <div class="stat-item">
+              <span class="stat-value phosphor font-mono">3+</span>
+              <span class="stat-label">Tahun Pengalaman</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value phosphor font-mono">10+</span>
+              <span class="stat-label">Proyek Selesai</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value phosphor font-mono">∞</span>
+              <span class="stat-label">Kopi Diminum</span>
+            </div>
+          </div>
+        </div>
+      </TerminalCard>
+
+      <!-- Tech stack card -->
+      <TerminalCard title="~/about/tech-stack.sh" class="stack-card">
+        <div class="stack-content">
+          <p class="font-mono" style="color: var(--color-fg-muted); font-size: 0.8rem; margin-bottom: 1rem;">
+            <span style="color: var(--color-primary);">$</span> cat tech_stack.txt
+          </p>
+          <div class="badges-grid">
+            {techStack.map((tech) => (
+              <Badge variant={tech.variant}>[{tech.name}]</Badge>
+            ))}
+          </div>
+
+          <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--color-border);">
+            <p class="font-mono" style="font-size: 0.75rem; color: var(--color-fg-dim); margin-bottom: 0.5rem;">
+              // Currently learning
+            </p>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <Badge variant="cyan">[Go]</Badge>
+              <Badge variant="cyan">[Redis]</Badge>
+              <Badge variant="cyan">[Kubernetes]</Badge>
+            </div>
+          </div>
+        </div>
+      </TerminalCard>
+
+    </div>
+  </div>
+</section>
+
+<style>
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  @media (min-width: 768px) {
+    .about-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .bio-content, .stack-content {
+    /* padding is handled by card-body */
+  }
+
+  .quick-stats {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+    flex-wrap: wrap;
+  }
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  .stat-label {
+    font-size: 0.72rem;
+    color: var(--color-fg-muted);
+  }
+
+  .badges-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+</style>

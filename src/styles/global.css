@@ -1,0 +1,386 @@
+@import "tailwindcss";
+
+/* ─── Design Tokens: Phosphor Theme ─────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --color-void:      #080808;
+  --color-base:      #0C0C0F;
+  --color-panel:     #111116;
+  --color-elevated:  #161620;
+  --color-overlay:   #1A1A28;
+  --color-input:     #141419;
+  --color-muted:     #1A1A22;
+
+  /* Accent */
+  --color-primary:   #00FF87;
+  --color-primary-dim: #00C864;
+  --color-cyan:      #00C8F0;
+  --color-red:       #FF5555;
+  --color-yellow:    #FFB86C;
+
+  /* Text */
+  --color-fg:        #E2E8E2;
+  --color-fg-muted:  #8B9E8B;
+  --color-fg-dim:    #556055;
+
+  /* Border */
+  --color-border:    #1E2A1E;
+  --color-border-bright: #2A3E2A;
+
+  /* Glow */
+  --glow-sm:   0 0 8px  rgba(0, 255, 135, 0.15);
+  --glow-md:   0 0 16px rgba(0, 255, 135, 0.20);
+  --glow-lg:   0 0 32px rgba(0, 255, 135, 0.25);
+  --glow-focus: 0 0 0 2px rgba(0, 255, 135, 0.40);
+
+  /* Shadow */
+  --shadow-sm:  0 1px 4px  rgba(0, 0, 0, 0.60);
+  --shadow-md:  0 4px 16px rgba(0, 0, 0, 0.70);
+  --shadow-lg:  0 8px 32px rgba(0, 0, 0, 0.80);
+
+  /* Font */
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  /* Border Radius */
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+
+  /* Transition */
+  --transition: all 0.2s ease-out;
+}
+
+/* ─── Base Reset ─────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-base);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── Custom Scrollbar ───────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-void);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-dim);
+  box-shadow: var(--glow-sm);
+}
+
+/* ─── Typography Helpers ─────────────────────────────────────────────────── */
+.font-mono  { font-family: var(--font-mono); }
+.font-sans  { font-family: var(--font-sans); }
+
+.text-primary  { color: var(--color-primary); }
+.text-cyan     { color: var(--color-cyan); }
+.text-muted    { color: var(--color-fg-muted); }
+.text-dim      { color: var(--color-fg-dim); }
+
+/* ─── Glow Utilities ─────────────────────────────────────────────────────── */
+.glow-sm  { text-shadow: 0 0 8px  rgba(0, 255, 135, 0.50); }
+.glow-md  { text-shadow: 0 0 16px rgba(0, 255, 135, 0.60); }
+.glow-box { box-shadow: var(--glow-md); }
+
+/* ─── Animations ─────────────────────────────────────────────────────────── */
+
+/* Cursor blink */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* Typewriter */
+@keyframes typing {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+@keyframes typing-cursor {
+  from { border-right-color: var(--color-primary); }
+  to   { border-right-color: transparent; }
+}
+
+/* Fade in + slide up */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fadeUp 0.4s ease-out forwards;
+}
+.animation-delay-75  { animation-delay: 75ms; }
+.animation-delay-150 { animation-delay: 150ms; }
+.animation-delay-225 { animation-delay: 225ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+
+/* Green pulse */
+@keyframes greenPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+.animate-pulse-green {
+  animation: greenPulse 2s ease-in-out infinite;
+}
+
+/* Scan line sweep (subtle CRT effect) */
+@keyframes scanline {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* ─── Background: Grid Dot Pattern ───────────────────────────────────────── */
+.bg-grid-dots {
+  background-image: radial-gradient(circle, rgba(0,255,135,0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ─── CRT Scan Line Overlay ──────────────────────────────────────────────── */
+.crt-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+}
+
+/* ─── Terminal Card ───────────────────────────────────────────────────────── */
+.terminal-card {
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: var(--transition);
+}
+.terminal-card:hover {
+  border-color: var(--color-border-bright);
+  box-shadow: var(--shadow-md), var(--glow-sm);
+}
+
+.terminal-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-muted);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+.terminal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.dot-red    { background: #FF5555; }
+.dot-yellow { background: #FFB86C; }
+.dot-green  { background: #50FA7B; }
+
+/* ─── Badge ──────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-muted);
+  color: var(--color-fg-muted);
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.badge-primary {
+  border-color: rgba(0, 255, 135, 0.30);
+  background: rgba(0, 255, 135, 0.08);
+  color: var(--color-primary);
+}
+.badge-cyan {
+  border-color: rgba(0, 200, 240, 0.30);
+  background: rgba(0, 200, 240, 0.08);
+  color: var(--color-cyan);
+}
+
+/* ─── Button Styles ──────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-void);
+  font-weight: 600;
+}
+.btn-primary:hover {
+  background: #00e87a;
+  box-shadow: var(--glow-md);
+  transform: translateY(-1px);
+}
+.btn-outline {
+  background: transparent;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.btn-outline:hover {
+  background: rgba(0, 255, 135, 0.08);
+  box-shadow: var(--glow-sm);
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--glow-focus);
+}
+
+/* ─── Input ──────────────────────────────────────────────────────────────── */
+.terminal-input {
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  padding: 10px 14px;
+  caret-color: var(--color-primary);
+  transition: var(--transition);
+  width: 100%;
+}
+.terminal-input:focus {
+  outline: none;
+  border-color: var(--color-primary-dim);
+  box-shadow: var(--glow-focus);
+}
+
+/* ─── Section Layout ─────────────────────────────────────────────────────── */
+.section {
+  padding: 4rem 0;
+}
+@media (min-width: 768px) {
+  .section {
+    padding: 6rem 0;
+  }
+}
+
+.container {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ─── Section Heading ────────────────────────────────────────────────────── */
+.section-heading {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 0.5rem;
+}
+.section-subheading {
+  font-family: var(--font-sans);
+  color: var(--color-fg-muted);
+  font-size: 0.9rem;
+  margin-bottom: 2.5rem;
+}
+
+/* ─── Divider ────────────────────────────────────────────────────────────── */
+.ascii-divider {
+  font-family: var(--font-mono);
+  color: var(--color-border-bright);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  user-select: none;
+}
+
+/* ─── Navbar ─────────────────────────────────────────────────────────────── */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(12, 12, 15, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 1.5rem;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.nav-logo:hover { text-shadow: 0 0 8px rgba(0,255,135,0.50); }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  list-style: none;
+}
+.nav-link {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-fg-muted);
+  text-decoration: none;
+  transition: var(--transition);
+}
+.nav-link:hover { color: var(--color-primary); }
+
+/* ─── Phosphor Text Glow on Primary Elements ─────────────────────────────── */
+.phosphor {
+  color: var(--color-primary);
+  text-shadow: 0 0 10px rgba(0, 255, 135, 0.40);
+}

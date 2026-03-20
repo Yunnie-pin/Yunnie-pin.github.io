@@ -1,0 +1,216 @@
+---
+import TerminalCard from './ui/TerminalCard.astro';
+import Badge from './ui/Badge.astro';
+
+interface Project {
+  title: string;
+  description: string;
+  tech: string[];
+  url?: string;
+  repo?: string;
+  status: 'live' | 'wip' | 'archived';
+  featured?: boolean;
+}
+
+const projects: Project[] = [
+  {
+    title: "Project Title 1",
+    description: "Deskripsi singkat proyek ini. Ceritakan apa yang dibangun, masalah yang diselesaikan, dan teknologi utama yang digunakan.",
+    tech: ["PHP", "Laravel", "MySQL"],
+    url: "#",
+    repo: "#",
+    status: "live",
+    featured: true,
+  },
+  {
+    title: "Project Title 2",
+    description: "Deskripsi singkat proyek ini. REST API backend untuk aplikasi mobile dengan autentikasi JWT dan manajemen role.",
+    tech: ["Laravel", "PostgreSQL", "REST API"],
+    url: "#",
+    repo: "#",
+    status: "live",
+  },
+  {
+    title: "Project Title 3",
+    description: "Deskripsi singkat proyek ini. Script automasi data dengan Python untuk kebutuhan reporting dan analitik.",
+    tech: ["Python", "MySQL", "Pandas"],
+    repo: "#",
+    status: "wip",
+  },
+  {
+    title: "Project Title 4",
+    description: "Deskripsi singkat proyek ini. Tambahkan detail proyek Anda di sini.",
+    tech: ["PHP", "Bootstrap", "JavaScript"],
+    url: "#",
+    status: "archived",
+  },
+];
+
+const statusLabel: Record<Project['status'], string> = {
+  live:     '[LIVE]',
+  wip:      '[WIP]',
+  archived: '[ARCHIVED]',
+};
+const statusColor: Record<Project['status'], string> = {
+  live:     'var(--color-primary)',
+  wip:      'var(--color-yellow)',
+  archived: 'var(--color-fg-dim)',
+};
+---
+
+<section id="projects" class="section" style="background: var(--color-void);">
+  <div class="container">
+
+    <!-- Heading -->
+    <p class="ascii-divider"><!-- ─────────────────────────────── --></p>
+    <h2 class="section-heading">// projects</h2>
+    <p class="section-subheading">Beberapa proyek yang pernah saya kerjakan</p>
+
+    <!-- Bento grid -->
+    <div class="projects-grid">
+      {projects.map((project, i) => (
+        <div class={`project-item ${project.featured ? 'featured' : ''}`}>
+          <TerminalCard title={`~/projects/${project.title.toLowerCase().replace(/ /g, '-')}`} class="h-full">
+            <div class="project-body">
+
+              <!-- Header -->
+              <div class="project-header">
+                <h3 class="project-title font-mono">{project.title}</h3>
+                <span
+                  class="font-mono"
+                  style={`font-size: 0.7rem; color: ${statusColor[project.status]};`}
+                >
+                  {statusLabel[project.status]}
+                </span>
+              </div>
+
+              <!-- Description -->
+              <p class="project-desc">{project.description}</p>
+
+              <!-- Tech badges -->
+              <div class="project-tech">
+                {project.tech.map(t => (
+                  <Badge variant="primary">[{t}]</Badge>
+                ))}
+              </div>
+
+              <!-- Links -->
+              <div class="project-links">
+                {project.url && project.url !== '#' ? (
+                  <a href={project.url} target="_blank" rel="noopener noreferrer" class="project-link font-mono">
+                    [view →]
+                  </a>
+                ) : project.url === '#' ? (
+                  <span class="project-link font-mono" style="opacity: 0.4; cursor: default;">[view →]</span>
+                ) : null}
+                {project.repo && (
+                  <a
+                    href={project.repo !== '#' ? project.repo : undefined}
+                    target={project.repo !== '#' ? '_blank' : undefined}
+                    rel="noopener noreferrer"
+                    class="project-link font-mono"
+                    style={project.repo === '#' ? 'opacity:0.4; cursor:default;' : ''}
+                  >
+                    [repo →]
+                  </a>
+                )}
+              </div>
+
+            </div>
+          </TerminalCard>
+        </div>
+      ))}
+    </div>
+
+    <!-- CTA -->
+    <div style="text-align: center; margin-top: 2rem;">
+      <p class="font-mono" style="color: var(--color-fg-muted); font-size: 0.8rem;">
+        <span style="color: var(--color-primary);">$</span> git log --oneline --all
+        <span style="color: var(--color-fg-dim);"> # more on GitHub</span>
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .projects-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  @media (min-width: 640px) {
+    .projects-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (min-width: 1024px) {
+    .projects-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .project-item.featured {
+      grid-column: span 2;
+    }
+  }
+
+  .project-item {
+    animation: fadeUp 0.4s ease-out forwards;
+    opacity: 0;
+  }
+  .project-item:nth-child(1) { animation-delay: 0ms; }
+  .project-item:nth-child(2) { animation-delay: 75ms; }
+  .project-item:nth-child(3) { animation-delay: 150ms; }
+  .project-item:nth-child(4) { animation-delay: 225ms; }
+
+  .h-full { height: 100%; }
+
+  .project-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    height: 100%;
+  }
+
+  .project-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .project-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-fg);
+  }
+
+  .project-desc {
+    color: var(--color-fg-muted);
+    font-size: 0.875rem;
+    line-height: 1.7;
+    flex: 1;
+  }
+
+  .project-tech {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .project-links {
+    display: flex;
+    gap: 1rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+  }
+
+  .project-link {
+    font-size: 0.78rem;
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: var(--transition);
+  }
+  .project-link:hover {
+    text-shadow: 0 0 8px rgba(0,255,135,0.50);
+  }
+</style>
