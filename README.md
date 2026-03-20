@@ -1,7 +1,5 @@
 # yunnie-pin.github.io
 
-**Live:** https://yunnie-pin.github.io
-
 ---
 
 ## Tech Stack
