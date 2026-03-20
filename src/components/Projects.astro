@@ -2,50 +2,8 @@
 import TerminalCard from './ui/TerminalCard.astro';
 import Badge from './ui/Badge.astro';
 import TerminalPrompt from './ui/TerminalPrompt.astro';
-
-interface Project {
-  title: string;
-  description: string;
-  tech: string[];
-  url?: string;
-  repo?: string;
-  status: 'live' | 'wip' | 'archived';
-  featured?: boolean;
-}
-
-const projects: Project[] = [
-  {
-    title: "Project Title 1",
-    description: "Deskripsi singkat proyek ini. Ceritakan apa yang dibangun, masalah yang diselesaikan, dan teknologi utama yang digunakan.",
-    tech: ["PHP", "Laravel", "MySQL"],
-    url: "#",
-    repo: "#",
-    status: "live",
-    featured: true,
-  },
-  {
-    title: "Project Title 2",
-    description: "Deskripsi singkat proyek ini. REST API backend untuk aplikasi mobile dengan autentikasi JWT dan manajemen role.",
-    tech: ["Laravel", "PostgreSQL", "REST API"],
-    url: "#",
-    repo: "#",
-    status: "live",
-  },
-  {
-    title: "Project Title 3",
-    description: "Deskripsi singkat proyek ini. Script automasi data dengan Python untuk kebutuhan reporting dan analitik.",
-    tech: ["Python", "MySQL", "Pandas"],
-    repo: "#",
-    status: "wip",
-  },
-  {
-    title: "Project Title 4",
-    description: "Deskripsi singkat proyek ini. Tambahkan detail proyek Anda di sini.",
-    tech: ["PHP", "Bootstrap", "JavaScript"],
-    url: "#",
-    status: "archived",
-  },
-];
+import { projects } from '../data/projects';
+import type { Project } from '../data/projects';
 
 const statusLabel: Record<Project['status'], string> = {
   live:     '[LIVE]',
@@ -68,17 +26,35 @@ const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
     <!-- Heading -->
     <p class="ascii-divider"><!-- ─────────────────────────────── --></p>
     <h2 class="section-heading glitch" data-text="// projects">// projects</h2>
-    <p class="section-subheading">Beberapa proyek yang pernah saya kerjakan</p>
+    <p class="section-subheading">These are some of the projects I've worked on</p>
 
-    <!-- Filter bar -->
-    <div class="filter-bar" id="filter-bar">
-      <button class="filter-btn active" data-filter="all">[ALL]</button>
-      <button class="filter-btn" data-filter="status:live">[LIVE]</button>
-      <button class="filter-btn" data-filter="status:wip">[WIP]</button>
-      <button class="filter-btn" data-filter="status:archived">[ARCHIVED]</button>
-      {allTechs.map((tech) => (
-        <button class="filter-btn" data-filter={`tech:${tech}`}>[{tech}]</button>
-      ))}
+    <!-- Filter bar (hidden when no projects) -->
+    {projects.length > 0 && (
+      <div class="filter-bar" id="filter-bar">
+        <button class="filter-btn active" data-filter="all">[ALL]</button>
+        <button class="filter-btn" data-filter="status:live">[LIVE]</button>
+        <button class="filter-btn" data-filter="status:wip">[WIP]</button>
+        <button class="filter-btn" data-filter="status:archived">[ARCHIVED]</button>
+        {allTechs.map((tech) => (
+          <button class="filter-btn" data-filter={`tech:${tech}`}>[{tech}]</button>
+        ))}
+      </div>
+    )}
+
+    <!-- Empty state -->
+    {projects.length === 0 && (
+      <div class="empty-state" id="empty-state-no-projects">
+        <span class="font-mono empty-icon">_</span>
+        <p class="font-mono">// no projects found</p>
+        <p class="empty-hint">Check back later.</p>
+      </div>
+    )}
+
+    <!-- Filter empty state (shown via JS) -->
+    <div class="empty-state hidden" id="empty-state-filter" aria-live="polite">
+      <span class="font-mono empty-icon">∅</span>
+      <p class="font-mono">// no results for active filter</p>
+      <p class="empty-hint">Try a different tag.</p>
     </div>
 
     <!-- Bento grid -->
@@ -173,6 +149,7 @@ const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
   // ── Filter ─────────────────────────────────────────────────────────────────
   const filterBar = document.getElementById('filter-bar');
   const allItems = Array.from(document.querySelectorAll<HTMLElement>('.project-item'));
+  const emptyFilter = document.getElementById('empty-state-filter');
 
   filterBar?.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.filter-btn');
@@ -183,6 +160,7 @@ const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
     btn.classList.add('active');
 
     const filter = btn.dataset.filter ?? 'all';
+    let visibleCount = 0;
 
     allItems.forEach((item) => {
       const status = item.dataset.status ?? '';
@@ -199,11 +177,18 @@ const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
 
       item.style.display = show ? '' : 'none';
 
-      // Re-trigger reveal animation for newly shown items
-      if (show && !item.classList.contains('visible')) {
-        item.classList.add('visible');
+      if (show) {
+        visibleCount++;
+        if (!item.classList.contains('visible')) {
+          item.classList.add('visible');
+        }
       }
     });
+
+    // Toggle filter empty state
+    if (emptyFilter) {
+      emptyFilter.classList.toggle('hidden', visibleCount > 0);
+    }
   });
 </script>
 
@@ -304,5 +289,33 @@ const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
   .cta-wrap {
     text-align: center;
     margin-top: 2rem;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 3rem 1rem;
+    color: var(--color-fg-dim);
+    text-align: center;
+  }
+  .empty-icon {
+    font-size: 2rem;
+    color: var(--color-primary);
+    opacity: 0.5;
+    animation: blink 1.2s step-start infinite;
+  }
+  .empty-state p {
+    font-size: 0.875rem;
+    color: var(--color-fg-muted);
+  }
+  .empty-hint {
+    font-size: 0.75rem;
+    color: var(--color-fg-dim);
+    margin-top: 0.25rem;
+  }
+  .hidden {
+    display: none;
   }
 </style>

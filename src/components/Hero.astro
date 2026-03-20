@@ -1,6 +1,8 @@
 ---
 import Cursor from './decorative/Cursor.astro';
 import CmdButton from './ui/CmdButton.astro';
+import { typewriterRoles } from '../data/profile';
+import { about } from '../data/about';
 ---
 
 <section id="hero" class="hero-section bg-grid-dots">
@@ -36,10 +38,7 @@ import CmdButton from './ui/CmdButton.astro';
         </p>
 
         <!-- Bio -->
-        <p class="hero-bio animate-fade-up animation-delay-225">
-          Membangun sistem backend yang efisien, scalable, dan mudah di-maintain.
-          Passionate tentang clean code, database design, dan API development.
-        </p>
+        <p class="hero-bio animate-fade-up animation-delay-225">{about.bio}</p>
 
         <!-- Buttons -->
         <div class="hero-actions animate-fade-up animation-delay-300">
@@ -58,7 +57,7 @@ import CmdButton from './ui/CmdButton.astro';
         <div class="hero-status animate-fade-up animation-delay-300">
           <span class="status-dot animate-pulse-green"></span>
           <span class="font-mono status-text">
-            [STATUS] Available for work
+            [STATUS] Available for collaboration
           </span>
         </div>
 
@@ -91,13 +90,8 @@ import CmdButton from './ui/CmdButton.astro';
 </section>
 
 <!-- Typewriter script -->
-<script>
-  const roles = [
-    "Backend Developer",
-    "PHP & Laravel Dev",
-    "API Architect",
-    "Database Designer",
-  ];
+<script define:vars={{ typewriterRoles }}>
+  const roles = typewriterRoles;
   let roleIndex = 0;
   let charIndex = 0;
   let deleting = false;
@@ -319,26 +313,23 @@ import CmdButton from './ui/CmdButton.astro';
       '',
       `  <span class="tc-green">Arifin Yunianta</span>`,
       `  Backend Developer · Indonesia`,
-      `  PHP · Laravel · Python · MySQL`,
-      `  Status: <span class="tc-green">● Available for work</span>`,
+      `  Go · PHP · Node.Js`,
+      `  Status: <span class="tc-green">● Available for collaboration</span>`,
       '',
     ],
     skills: () => [
       '',
-      `  <span class="tc-dim">Languages  :</span> PHP, Python, JavaScript`,
-      `  <span class="tc-dim">Frameworks :</span> Laravel, Bootstrap`,
-      `  <span class="tc-dim">Databases  :</span> MySQL, PostgreSQL`,
+      `  <span class="tc-dim">Languages  :</span> Go, PHP, JavaScript`,
+      `  <span class="tc-dim">Frameworks :</span> Laravel, Node.Js, Flutter, React`,
+      `  <span class="tc-dim">Databases  :</span> MySQL, PostgreSQL, Clickhouse, Firebase`,
       `  <span class="tc-dim">Tools      :</span> Git, Docker, Linux`,
-      `  <span class="tc-cyan">Learning   :</span> Go, Redis, Kubernetes`,
+      `  <span class="tc-cyan">Learning   :</span> Go, Kubernetes, Rust`,
       '',
     ],
     experience: () => [
       '',
-      `  <span class="tc-green">Backend Developer</span> · Nama Perusahaan`,
-      `  <span class="tc-dim">2023 — Present · Remote</span>`,
-      '',
-      `  <span class="tc-green">Junior Backend Developer</span> · Nama Perusahaan`,
-      `  <span class="tc-dim">2021 — 2023 · Jakarta</span>`,
+      `  <span class="tc-green">Backend Developer</span> · PT. Telto Telematis Indonesia`,
+      `  <span class="tc-dim">2024 — Present · Remote</span>`,
       '',
     ],
     contact: () => {

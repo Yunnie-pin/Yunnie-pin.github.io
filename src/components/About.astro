@@ -2,21 +2,7 @@
 import TerminalCard from './ui/TerminalCard.astro';
 import Badge from './ui/Badge.astro';
 import TerminalPrompt from './ui/TerminalPrompt.astro';
-
-const techStack = [
-  { name: "PHP",        variant: "primary" as const },
-  { name: "Laravel",    variant: "primary" as const },
-  { name: "Python",     variant: "primary" as const },
-  { name: "MySQL",      variant: "cyan"    as const },
-  { name: "PostgreSQL", variant: "cyan"    as const },
-  { name: "REST API",   variant: "cyan"    as const },
-  { name: "Git",        variant: "default" as const },
-  { name: "GitHub",     variant: "default" as const },
-  { name: "Linux",      variant: "default" as const },
-  { name: "Docker",     variant: "default" as const },
-  { name: "Bootstrap",  variant: "default" as const },
-  { name: "JavaScript", variant: "default" as const },
-];
+import { about, techStackByCategory, learningStack } from '../data/about';
 
 ---
 
@@ -37,34 +23,29 @@ const techStack = [
 
           <!-- Profile avatar -->
           <div class="profile-avatar">
-            <img src="/assets/foto.jpg" alt="Arifin Yunianta" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+            <img src={`https://avatars.githubusercontent.com/u/${about.githubId}`} alt={about.name} onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
             <div class="avatar-fallback">AY</div>
           </div>
 
-          <TerminalPrompt prefix="#" command="Arifin Yunianta" style="margin-bottom: 1rem;" />
-          <p class="bio-text">
-            Saya adalah seorang <strong style="color: var(--color-primary);">Backend Developer</strong> yang
-            passionate dalam membangun sistem yang handal dan efisien. Saya menikmati merancang
-            arsitektur database, membangun API, dan mengoptimalkan performa aplikasi.
-          </p>
+          <TerminalPrompt prefix="#" command={about.name} style="margin-bottom: 1rem;" />
+          <p class="bio-text">{about.bio}</p>
           <p class="bio-text-muted">
-            Ketika tidak sedang coding, saya senang belajar teknologi baru dan berkontribusi
-            pada proyek open source.
+            {about.subbio}
           </p>
 
           <!-- Quick stats -->
           <div class="quick-stats">
             <div class="stat-item">
-              <span class="stat-value phosphor font-mono">3+</span>
-              <span class="stat-label">Tahun Pengalaman</span>
+              <span class="stat-value phosphor font-mono">{about.stats.years}</span>
+              <span class="stat-label">Year Experience</span>
             </div>
             <div class="stat-item">
-              <span class="stat-value phosphor font-mono">10+</span>
-              <span class="stat-label">Proyek Selesai</span>
+              <span class="stat-value phosphor font-mono">{about.stats.projects}</span>
+              <span class="stat-label">Project/Product</span>
             </div>
             <div class="stat-item">
               <span class="stat-value phosphor font-mono">∞</span>
-              <span class="stat-label">Kopi Diminum</span>
+              <span class="stat-label">Caffeine Consumed</span>
             </div>
           </div>
         </div>
@@ -74,9 +55,16 @@ const techStack = [
       <TerminalCard title="~/about/tech-stack.sh" class="stack-card">
         <div class="stack-content">
           <TerminalPrompt command="cat tech_stack.txt" style="margin-bottom: 1rem;" />
-          <div class="badges-grid">
-            {techStack.map((tech) => (
-              <Badge variant={tech.variant}>[{tech.name}]</Badge>
+          <div class="stack-categories">
+            {techStackByCategory.map((category) => (
+              <div class="stack-category">
+                <p class="font-mono category-label">// {category.label}</p>
+                <div class="badges-grid">
+                  {category.items.map((tech) => (
+                    <Badge variant={tech.variant}>[{tech.name}]</Badge>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
 
@@ -85,9 +73,9 @@ const techStack = [
               // Currently learning
             </p>
             <div class="stack-learning">
-              <Badge variant="cyan">[Go]</Badge>
-              <Badge variant="cyan">[Redis]</Badge>
-              <Badge variant="cyan">[Kubernetes]</Badge>
+              {learningStack.map((tech) => (
+                <Badge variant={tech.variant}>[{tech.name}]</Badge>
+              ))}
             </div>
           </div>
         </div>
@@ -104,9 +92,13 @@ const techStack = [
 
         <div class="nf-layout">
 
+          <!-- Spinning ASCII donut -->
+          <pre id="nf-donut" class="nf-donut font-mono phosphor" aria-hidden="true"></pre>
+
+          <div class="nf-info">
           <!-- ASCII identity block -->
           <div class="nf-identity">
-            <p class="nf-user font-mono"><span class="phosphor">arifin</span><span class="nf-at">@</span><span class="nf-host">portfolio</span></p>
+            <p class="nf-user font-mono"><span class="phosphor">yunnie-pin</span><span class="nf-at">@</span><span class="nf-host">127.0.0.1</span></p>
             <p class="nf-sep font-mono">────────────────</p>
           </div>
 
@@ -128,19 +120,20 @@ const techStack = [
               <span class="nf-key font-mono">date</span>
               <span class="nf-val font-mono" id="nf-date">---</span>
             </div>
-            <div class="nf-row">
+            <!-- <div class="nf-row">
               <span class="nf-key font-mono">uptime</span>
               <span class="nf-val font-mono">3+ years coding</span>
             </div>
             <div class="nf-row">
               <span class="nf-key font-mono">shell</span>
-              <span class="nf-val font-mono">bash + Laravel</span>
-            </div>
+              <span class="nf-val font-mono">bash</span>
+            </div> -->
             <div class="nf-row">
               <span class="nf-key font-mono">status</span>
-              <span class="nf-val font-mono"><span class="phosphor">●</span> open to work · remote</span>
+              <span class="nf-val font-mono"><span class="phosphor">●</span> open to collaboration</span>
             </div>
           </div>
+          </div><!-- /nf-info -->
 
         </div>
 
@@ -226,6 +219,45 @@ const techStack = [
 
   updateClock();
   setInterval(updateClock, 1000);
+
+  // ── Spinning ASCII donut ──────────────────────────────────────────────────
+  const donutEl = document.getElementById('nf-donut') as HTMLPreElement | null;
+  const DW = 28, DH = 14;
+  let A = 1.0, B = 1.0;
+
+  function renderDonut() {
+    const b: string[] = new Array(DW * DH).fill(' ');
+    const z: number[] = new Array(DW * DH).fill(0);
+    const sinA = Math.sin(A), cosA = Math.cos(A);
+    const sinB = Math.sin(B), cosB = Math.cos(B);
+    for (let j = 0; j < 6.28; j += 0.10) {
+      const sinJ = Math.sin(j), cosJ = Math.cos(j);
+      for (let i = 0; i < 6.28; i += 0.03) {
+        const sinI = Math.sin(i), cosI = Math.cos(i);
+        const h = cosJ + 2;
+        const D = 1 / (sinI * h * sinA + sinJ * cosA + 5);
+        const t = sinI * h * cosA - sinJ * sinA;
+        const x = Math.floor(DW / 2 + (DW / 2 - 1) * D * (cosI * h * cosB - t * sinB));
+        const y = Math.floor(DH / 2 + (DH / 2 - 1) * 0.85 * D * (cosI * h * sinB + t * cosB));
+        const o = x + DW * y;
+        const N = Math.floor(8 * ((sinJ * sinA - sinI * cosJ * cosA) * cosB - sinI * cosJ * sinA - sinJ * cosA - cosI * cosJ * sinB));
+        if (y >= 0 && y < DH && x >= 0 && x < DW && D > z[o]) {
+          z[o] = D;
+          b[o] = '.,-~:;=!*#$@'[N > 0 ? N : 0];
+        }
+      }
+    }
+    if (donutEl) {
+      let out = '';
+      for (let i = 0; i < DH; i++) out += b.slice(i * DW, (i + 1) * DW).join('') + '\n';
+      donutEl.textContent = out;
+    }
+    A += 0.07;
+    B += 0.03;
+  }
+
+  renderDonut();
+  setInterval(renderDonut, 50);
 </script>
 
 <style>
@@ -262,16 +294,33 @@ const techStack = [
     color: var(--color-fg-muted);
   }
 
+  @keyframes phosphor-pulse {
+    0%, 100% {
+      box-shadow:
+        0 0 0 2px var(--color-primary),
+        0 0 8px 2px color-mix(in srgb, var(--color-primary) 40%, transparent),
+        0 0 18px 4px color-mix(in srgb, var(--color-primary) 20%, transparent);
+      border-color: var(--color-primary);
+    }
+    50% {
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--color-primary) 60%, transparent),
+        0 0 14px 4px color-mix(in srgb, var(--color-primary) 55%, transparent),
+        0 0 32px 8px color-mix(in srgb, var(--color-primary) 25%, transparent);
+      border-color: color-mix(in srgb, var(--color-primary) 70%, transparent);
+    }
+  }
+
   .profile-avatar {
     width: 80px;
     height: 80px;
     border-radius: 50%;
     border: 2px solid var(--color-primary);
-    box-shadow: var(--glow-sm);
     overflow: hidden;
     margin-bottom: 1.25rem;
     position: relative;
     flex-shrink: 0;
+    animation: phosphor-pulse 2.8s ease-in-out infinite;
   }
   .profile-avatar img {
     width: 100%;
@@ -293,6 +342,20 @@ const techStack = [
     letter-spacing: 0.05em;
   }
 
+  .stack-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .stack-category {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .category-label {
+    font-size: 0.7rem;
+    color: var(--color-fg-dim);
+  }
   .badges-grid {
     display: flex;
     flex-wrap: wrap;
@@ -368,13 +431,30 @@ const techStack = [
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    align-items: flex-start;
   }
   @media (min-width: 560px) {
     .nf-layout {
       flex-direction: row;
-      gap: 2.5rem;
+      gap: 1.75rem;
       align-items: flex-start;
     }
+  }
+
+  .nf-donut {
+    font-size: 0.6rem;
+    line-height: 1.15;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+    user-select: none;
+    white-space: pre;
+  }
+
+  .nf-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
   }
 
   .nf-identity {
