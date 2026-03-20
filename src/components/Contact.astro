@@ -1,5 +1,6 @@
 ---
 import TerminalCard from './ui/TerminalCard.astro';
+import TerminalPrompt from './ui/TerminalPrompt.astro';
 
 const socials = [
   {
@@ -45,22 +46,18 @@ const socials = [
 
       <!-- Left: Message -->
       <TerminalCard title="~/contact/message.txt">
-        <div style="display: flex; flex-direction: column; gap: 1rem;">
-          <div class="font-mono" style="font-size: 0.8rem; color: var(--color-fg-muted);">
-            <span style="color: var(--color-primary);">$</span> cat message.txt
-          </div>
+        <div class="msg-body">
+          <TerminalPrompt command="cat message.txt" />
 
-          <p style="color: var(--color-fg); line-height: 1.8;">
+          <p class="msg-text">
             Saya terbuka untuk peluang kerja baru, proyek freelance, atau sekadar berdiskusi tentang teknologi.
             Jangan ragu untuk menghubungi saya!
           </p>
 
-          <div style="padding: 1rem; background: var(--color-muted); border-radius: var(--radius-md); border: 1px solid var(--color-border);">
-            <p class="font-mono" style="font-size: 0.8rem; color: var(--color-fg-muted);">
-              <span style="color: var(--color-primary);">$</span> echo $EMAIL
-            </p>
-            <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 4px; flex-wrap: wrap;">
-              <p class="font-mono" style="font-size: 0.9rem; color: var(--color-cyan);">
+          <div class="inset-card">
+            <TerminalPrompt command="echo $EMAIL" />
+            <div class="email-row">
+              <p class="font-mono email-text">
                 arifin@example.com
               </p>
               <button id="copy-email-btn" class="copy-btn font-mono" data-email="arifin@example.com">
@@ -69,7 +66,7 @@ const socials = [
             </div>
           </div>
 
-          <div class="font-mono" style="font-size: 0.75rem; color: var(--color-fg-dim);">
+          <div class="font-mono response-note">
             // Response time: typically within 24 hours
           </div>
         </div>
@@ -77,10 +74,8 @@ const socials = [
 
       <!-- Right: Social links -->
       <TerminalCard title="~/contact/socials.sh">
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          <div class="font-mono" style="font-size: 0.8rem; color: var(--color-fg-muted); margin-bottom: 0.25rem;">
-            <span style="color: var(--color-primary);">$</span> ls -la socials/
-          </div>
+        <div class="socials-body">
+          <TerminalPrompt command="ls -la socials/" style="margin-bottom: 0.25rem;" />
 
           {socials.map((social) => (
             <a
@@ -203,5 +198,41 @@ const socials = [
   }
   .social-link:hover .social-arrow {
     opacity: 1;
+  }
+
+  .msg-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .msg-text {
+    color: var(--color-fg);
+    line-height: 1.8;
+  }
+  .inset-card {
+    padding: 1rem;
+    background: var(--color-muted);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+  }
+  .email-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+  .email-text {
+    font-size: 0.9rem;
+    color: var(--color-cyan);
+  }
+  .response-note {
+    font-size: 0.75rem;
+    color: var(--color-fg-dim);
+  }
+  .socials-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
   }
 </style>

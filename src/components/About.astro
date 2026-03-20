@@ -1,6 +1,7 @@
 ---
 import TerminalCard from './ui/TerminalCard.astro';
 import Badge from './ui/Badge.astro';
+import TerminalPrompt from './ui/TerminalPrompt.astro';
 
 const techStack = [
   { name: "PHP",        variant: "primary" as const },
@@ -19,7 +20,7 @@ const techStack = [
 
 ---
 
-<section id="about" class="section"  style="background: var(--color-void);">
+<section id="about" class="section section-bg-void">
   <div class="container">
 
     <!-- Heading -->
@@ -40,15 +41,13 @@ const techStack = [
             <div class="avatar-fallback">AY</div>
           </div>
 
-          <p class="font-mono" style="color: var(--color-fg-muted); font-size: 0.8rem; margin-bottom: 1rem;">
-            <span style="color: var(--color-primary);"># </span>Arifin Yunianta
-          </p>
-          <p style="color: var(--color-fg); line-height: 1.8; margin-bottom: 1rem;">
+          <TerminalPrompt prefix="#" command="Arifin Yunianta" style="margin-bottom: 1rem;" />
+          <p class="bio-text">
             Saya adalah seorang <strong style="color: var(--color-primary);">Backend Developer</strong> yang
             passionate dalam membangun sistem yang handal dan efisien. Saya menikmati merancang
             arsitektur database, membangun API, dan mengoptimalkan performa aplikasi.
           </p>
-          <p style="color: var(--color-fg-muted); line-height: 1.8;">
+          <p class="bio-text-muted">
             Ketika tidak sedang coding, saya senang belajar teknologi baru dan berkontribusi
             pada proyek open source.
           </p>
@@ -74,20 +73,18 @@ const techStack = [
       <!-- Tech stack card -->
       <TerminalCard title="~/about/tech-stack.sh" class="stack-card">
         <div class="stack-content">
-          <p class="font-mono" style="color: var(--color-fg-muted); font-size: 0.8rem; margin-bottom: 1rem;">
-            <span style="color: var(--color-primary);">$</span> cat tech_stack.txt
-          </p>
+          <TerminalPrompt command="cat tech_stack.txt" style="margin-bottom: 1rem;" />
           <div class="badges-grid">
             {techStack.map((tech) => (
               <Badge variant={tech.variant}>[{tech.name}]</Badge>
             ))}
           </div>
 
-          <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--color-border);">
-            <p class="font-mono" style="font-size: 0.75rem; color: var(--color-fg-dim); margin-bottom: 0.5rem;">
+          <div class="stack-divider">
+            <p class="font-mono stack-comment">
               // Currently learning
             </p>
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <div class="stack-learning">
               <Badge variant="cyan">[Go]</Badge>
               <Badge variant="cyan">[Redis]</Badge>
               <Badge variant="cyan">[Kubernetes]</Badge>
@@ -98,8 +95,138 @@ const techStack = [
 
     </div>
 
+    <!-- Neofetch + GIF row -->
+    <div class="neofetch-wrap">
+
+      <TerminalCard title="~/about/neofetch">
+      <div class="nf-body">
+        <TerminalPrompt command="neofetch --location" style="margin-bottom: 0.75rem;" />
+
+        <div class="nf-layout">
+
+          <!-- ASCII identity block -->
+          <div class="nf-identity">
+            <p class="nf-user font-mono"><span class="phosphor">arifin</span><span class="nf-at">@</span><span class="nf-host">portfolio</span></p>
+            <p class="nf-sep font-mono">────────────────</p>
+          </div>
+
+          <!-- Info table -->
+          <div class="nf-table">
+            <div class="nf-row">
+              <span class="nf-key font-mono">location</span>
+              <span class="nf-val font-mono">Yogyakarta, Indonesia</span>
+            </div>
+            <div class="nf-row">
+              <span class="nf-key font-mono">timezone</span>
+              <span class="nf-val font-mono">WIB (UTC+7)</span>
+            </div>
+            <div class="nf-row">
+              <span class="nf-key font-mono">local time</span>
+              <span class="nf-val font-mono phosphor" id="nf-time">--:--:--</span>
+            </div>
+            <div class="nf-row">
+              <span class="nf-key font-mono">date</span>
+              <span class="nf-val font-mono" id="nf-date">---</span>
+            </div>
+            <div class="nf-row">
+              <span class="nf-key font-mono">uptime</span>
+              <span class="nf-val font-mono">3+ years coding</span>
+            </div>
+            <div class="nf-row">
+              <span class="nf-key font-mono">shell</span>
+              <span class="nf-val font-mono">bash + Laravel</span>
+            </div>
+            <div class="nf-row">
+              <span class="nf-key font-mono">status</span>
+              <span class="nf-val font-mono"><span class="phosphor">●</span> open to work · remote</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Color swatches -->
+        <div class="nf-swatches">
+          <span class="nf-swatch" style="background: var(--color-void);"></span>
+          <span class="nf-swatch" style="background: var(--color-panel);"></span>
+          <span class="nf-swatch" style="background: var(--color-elevated);"></span>
+          <span class="nf-swatch" style="background: var(--color-border-bright);"></span>
+          <span class="nf-swatch" style="background: var(--color-primary);"></span>
+          <span class="nf-swatch" style="background: var(--color-cyan);"></span>
+          <span class="nf-swatch" style="background: var(--color-yellow);"></span>
+          <span class="nf-swatch" style="background: var(--color-red);"></span>
+        </div>
+
+      </div>
+      </TerminalCard>
+
+      <TerminalCard title="~/about/now-playing.gif" noPadding>
+        <canvas id="mari-canvas" class="gif-img"></canvas>
+        <img
+          id="mari-gif"
+          src="/assets/mari.gif"
+          alt="Blue Archive Mari"
+          class="gif-img gif-hidden"
+          crossorigin="anonymous"
+        />
+      </TerminalCard>
+
+    </div>
+
   </div>
 </section>
+
+<script>
+  // ── GIF freeze / unfreeze ────────────────────────────────────────────────
+  const mariGif    = document.getElementById('mari-gif')    as HTMLImageElement | null;
+  const mariCanvas = document.getElementById('mari-canvas') as HTMLCanvasElement | null;
+
+  if (mariGif && mariCanvas) {
+    const ctx = mariCanvas.getContext('2d');
+
+    function freezeToCanvas() {
+      if (!ctx) return;
+      mariCanvas!.width  = mariGif!.naturalWidth  || 220;
+      mariCanvas!.height = mariGif!.naturalHeight || 220;
+      ctx.drawImage(mariGif!, 0, 0, mariCanvas!.width, mariCanvas!.height);
+      mariCanvas!.style.display = 'block';
+      mariGif!.style.display    = 'none';
+    }
+
+    // Capture first frame once image has loaded
+    if (mariGif.complete && mariGif.naturalWidth) {
+      freezeToCanvas();
+    } else {
+      mariGif.addEventListener('load', freezeToCanvas, { once: true });
+    }
+
+    // Hover: show animated GIF
+    mariCanvas.addEventListener('mouseenter', () => {
+      mariCanvas!.style.display = 'none';
+      mariGif!.style.display    = 'block';
+    });
+
+    // Leave: re-freeze to canvas
+    mariGif.addEventListener('mouseleave', () => {
+      freezeToCanvas();
+    });
+  }
+
+  function getWIB() {
+    const now = new Date();
+    return new Date(now.getTime() + (7 * 60 - now.getTimezoneOffset()) * 60000);
+  }
+
+  function updateClock() {
+    const wib = getWIB();
+    const timeEl = document.getElementById('nf-time');
+    const dateEl = document.getElementById('nf-date');
+    if (timeEl) timeEl.textContent = wib.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (dateEl) dateEl.textContent = wib.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  updateClock();
+  setInterval(updateClock, 1000);
+</script>
 
 <style>
   .about-grid {
@@ -135,9 +262,175 @@ const techStack = [
     color: var(--color-fg-muted);
   }
 
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px solid var(--color-primary);
+    box-shadow: var(--glow-sm);
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .avatar-fallback {
+    display: none; /* toggled via onerror */
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-elevated);
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    letter-spacing: 0.05em;
+  }
+
   .badges-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
   }
+
+  .bio-text {
+    color: var(--color-fg);
+    line-height: 1.8;
+    margin-bottom: 1rem;
+  }
+  .bio-text-muted {
+    color: var(--color-fg-muted);
+    line-height: 1.8;
+  }
+  .stack-divider {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+  }
+  .stack-comment {
+    font-size: 0.75rem;
+    color: var(--color-fg-dim);
+    margin-bottom: 0.5rem;
+  }
+  .stack-learning {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  /* ── Neofetch + GIF row ── */
+  .neofetch-wrap {
+    margin-top: 3rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  @media (min-width: 640px) {
+    .neofetch-wrap {
+      grid-template-columns: 1fr auto;
+      align-items: stretch;
+    }
+  }
+
+  .gif-img {
+    display: block;
+    width: 100%;
+    max-width: 220px;
+    height: auto;
+    margin: 0 auto;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    cursor: pointer;
+  }
+  .gif-hidden {
+    display: none;
+  }
+  #mari-canvas {
+    filter: grayscale(1) brightness(0.75);
+    transition: filter 0.35s ease;
+  }
+  #mari-gif {
+    display: none;
+  }
+
+  .nf-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .nf-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  @media (min-width: 560px) {
+    .nf-layout {
+      flex-direction: row;
+      gap: 2.5rem;
+      align-items: flex-start;
+    }
+  }
+
+  .nf-identity {
+    flex-shrink: 0;
+  }
+  .nf-user {
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .nf-at   { color: var(--color-fg-dim); }
+  .nf-host { color: var(--color-cyan); }
+  .nf-sep  {
+    font-size: 0.72rem;
+    color: var(--color-border-bright);
+    margin-top: 2px;
+  }
+
+  .nf-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    flex: 1;
+  }
+
+  .nf-row {
+    display: flex;
+    gap: 1rem;
+    align-items: baseline;
+  }
+
+  .nf-key {
+    font-size: 0.72rem;
+    color: var(--color-primary);
+    min-width: 90px;
+    flex-shrink: 0;
+  }
+
+  .nf-val {
+    font-size: 0.78rem;
+    color: var(--color-fg-muted);
+  }
+
+  /* Color swatches (neofetch terminal palette) */
+  .nf-swatches {
+    display: flex;
+    gap: 5px;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .nf-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+
 </style>

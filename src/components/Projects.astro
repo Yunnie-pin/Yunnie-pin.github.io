@@ -1,6 +1,7 @@
 ---
 import TerminalCard from './ui/TerminalCard.astro';
 import Badge from './ui/Badge.astro';
+import TerminalPrompt from './ui/TerminalPrompt.astro';
 
 interface Project {
   title: string;
@@ -61,7 +62,7 @@ const statusColor: Record<Project['status'], string> = {
 const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
 ---
 
-<section id="projects" class="section" style="background: var(--color-void);">
+<section id="projects" class="section section-bg-void">
   <div class="container">
 
     <!-- Heading -->
@@ -119,15 +120,14 @@ const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
                     [view →]
                   </a>
                 ) : project.url === '#' ? (
-                  <span class="project-link font-mono" style="opacity: 0.4; cursor: default;">[view →]</span>
+                  <span class="project-link font-mono link-disabled">[view →]</span>
                 ) : null}
                 {project.repo && (
                   <a
                     href={project.repo !== '#' ? project.repo : undefined}
                     target={project.repo !== '#' ? '_blank' : undefined}
                     rel="noopener noreferrer"
-                    class="project-link font-mono"
-                    style={project.repo === '#' ? 'opacity:0.4; cursor:default;' : ''}
+                    class={`project-link font-mono${project.repo === '#' ? ' link-disabled' : ''}`}
                   >
                     [repo →]
                   </a>
@@ -141,11 +141,8 @@ const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
     </div>
 
     <!-- CTA -->
-    <div style="text-align: center; margin-top: 2rem;">
-      <p class="font-mono" style="color: var(--color-fg-muted); font-size: 0.8rem;">
-        <span style="color: var(--color-primary);">$</span> git log --oneline --all
-        <span style="color: var(--color-fg-dim);"> # more on GitHub</span>
-      </p>
+    <div class="cta-wrap">
+      <TerminalPrompt command="git log --oneline --all" comment="more on GitHub" />
     </div>
 
   </div>
@@ -155,18 +152,23 @@ const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
   // ── On-scroll Reveal ───────────────────────────────────────────────────────
   const items = document.querySelectorAll<HTMLElement>('.project-item');
 
-  const revealObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          revealObserver.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.1 }
-  );
-  items.forEach((item) => revealObserver.observe(item));
+  // Skip animation if user prefers reduced motion
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    items.forEach((item) => item.classList.add('visible'));
+  } else {
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+    items.forEach((item) => revealObserver.observe(item));
+  }
 
   // ── Filter ─────────────────────────────────────────────────────────────────
   const filterBar = document.getElementById('filter-bar');
@@ -239,6 +241,14 @@ const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
   .project-item:nth-child(3) { transition-delay: 150ms; }
   .project-item:nth-child(4) { transition-delay: 225ms; }
 
+  @media (prefers-reduced-motion: reduce) {
+    .project-item {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+
   .h-full { height: 100%; }
 
   .project-body {
@@ -289,5 +299,10 @@ const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
   }
   .project-link:hover {
     text-shadow: 0 0 8px rgba(0, 255, 135, 0.50);
+  }
+
+  .cta-wrap {
+    text-align: center;
+    margin-top: 2rem;
   }
 </style>

@@ -98,7 +98,7 @@ const experiences: Experience[] = [
                 <ul class="exp-achievements">
                   {exp.achievements.map((item) => (
                     <li class="exp-achievement-item">
-                      <span style="color: var(--color-primary); flex-shrink: 0;">▸</span>
+                      <span class="achievement-icon">▸</span>
                       <span>{item}</span>
                     </li>
                   ))}
@@ -253,6 +253,11 @@ const experiences: Experience[] = [
     font-size: 0.875rem;
     color: var(--color-fg-muted);
     line-height: 1.6;
+  }
+
+  .achievement-icon {
+    color: var(--color-primary);
+    flex-shrink: 0;
   }
 
   /* Mobile: hide connector, stack vertically */

@@ -132,6 +132,27 @@ const canonicalURL = Astro.url;
       <slot />
     </main>
 
+    <!-- Custom context menu -->
+    <div id="ctx-menu" class="ctx-menu font-mono" role="menu" aria-label="Context menu">
+      <button class="ctx-item" data-action="copy" role="menuitem">
+        <span class="ctx-item-prefix">$</span> copy
+      </button>
+      <div class="ctx-sep" role="separator"></div>
+      <button class="ctx-item" data-action="source" role="menuitem">
+        <span class="ctx-item-prefix">$</span> view-source
+      </button>
+      <button class="ctx-item" data-action="inspect" role="menuitem">
+        <span class="ctx-item-prefix">$</span> inspect element
+      </button>
+      <div class="ctx-sep" role="separator"></div>
+      <button class="ctx-item" data-action="contact" role="menuitem">
+        <span class="ctx-item-prefix">$</span> contact me
+      </button>
+      <button class="ctx-item" data-action="cv" role="menuitem">
+        <span class="ctx-item-prefix">↓</span> download cv
+      </button>
+    </div>
+
     <!-- Theme picker -->
     <ThemePicker />
 
@@ -205,6 +226,73 @@ const canonicalURL = Astro.url;
   overlay?.addEventListener('click', closeMenu);
   navLinksEl?.querySelectorAll('.nav-link').forEach((link) => {
     link.addEventListener('click', closeMenu);
+  });
+
+  // ── Custom Context Menu ───────────────────────────────────────────────────
+  const ctxMenu = document.getElementById('ctx-menu') as HTMLElement | null;
+
+  function openCtx(x: number, y: number) {
+    if (!ctxMenu) return;
+    // Reset position first so size measurement is accurate
+    ctxMenu.style.left = `${x}px`;
+    ctxMenu.style.top  = `${y}px`;
+    ctxMenu.classList.add('open');
+    // Flip if overflowing viewport
+    const { width: mw, height: mh } = ctxMenu.getBoundingClientRect();
+    if (x + mw > window.innerWidth)  ctxMenu.style.left = `${x - mw}px`;
+    if (y + mh > window.innerHeight) ctxMenu.style.top  = `${y - mh}px`;
+  }
+
+  function closeCtx() { ctxMenu?.classList.remove('open'); }
+
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    // Update [copy] label based on whether text is selected
+    const hasSel = (window.getSelection()?.toString().trim().length ?? 0) > 0;
+    const copyBtn = ctxMenu?.querySelector<HTMLElement>('[data-action="copy"]');
+    if (copyBtn) {
+      copyBtn.querySelector('.ctx-item-prefix')!.textContent = hasSel ? '$' : '//';
+      copyBtn.style.opacity = hasSel ? '1' : '0.4';
+    }
+    openCtx(e.clientX, e.clientY);
+  });
+
+  document.addEventListener('click',   (e) => { if (!ctxMenu?.contains(e.target as Node)) closeCtx(); });
+  document.addEventListener('scroll',  closeCtx, { passive: true });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCtx(); });
+
+  ctxMenu?.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
+    if (!btn) return;
+    closeCtx();
+
+    switch (btn.dataset.action) {
+      case 'copy': {
+        const sel = window.getSelection()?.toString() ?? '';
+        if (sel) await navigator.clipboard.writeText(sel);
+        break;
+      }
+      case 'source':
+        window.open(`view-source:${location.href}`, '_blank');
+        break;
+      case 'inspect':
+        console.log(
+          '%c👋 Hey there, fellow developer!',
+          'color:#00FF87;font-size:16px;font-weight:bold;'
+        );
+        console.log(
+          '%cPoking around? Respect. The stack: Astro v5 + Tailwind v4 + Three.js\n%cTry typing "sudo hire me" in the hero terminal 😄',
+          'color:#8B9E8B;font-size:12px;',
+          'color:#00C8F0;font-size:12px;'
+        );
+        break;
+      case 'contact':
+        document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+        break;
+      case 'cv':
+        window.open('/assets/cv.pdf', '_blank');
+        break;
+    }
   });
 
   // ── Scroll Reveal ─────────────────────────────────────────────────────────

@@ -13,22 +13,25 @@ import CmdButton from './ui/CmdButton.astro';
       <!-- Left: text content -->
       <div class="hero-content">
 
-        <!-- Terminal boot line -->
-        <p class="font-mono boot-line animate-fade-up">
-          <span style="color: var(--color-fg-dim);">$</span>
-          <span style="color: var(--color-fg-muted);"> whoami</span>
+        <!-- Terminal boot line (clickable) -->
+        <p class="font-mono boot-line animate-fade-up"
+           id="boot-line-btn" role="button" tabindex="0"
+           aria-expanded="false" aria-controls="hero-terminal">
+          <span class="boot-prefix">$</span>
+          <span class="boot-cmd"> whoami</span>
+          <span class="boot-hint">[click]</span>
         </p>
 
         <!-- Name -->
         <h1 class="hero-name animate-fade-up animation-delay-75">
           <span class="phosphor">Arifin</span>
-          <span style="color: var(--color-fg);"> Yunianta</span>
+          <span class="hero-name-last"> Yunianta</span>
           <Cursor />
         </h1>
 
         <!-- Role -->
         <p class="hero-role font-mono animate-fade-up animation-delay-150">
-          <span style="color: var(--color-cyan);">&gt;</span>
+          <span class="role-prefix">&gt;</span>
           <span id="typewriter" class="typewriter-text"> Backend Developer</span>
         </p>
 
@@ -54,16 +57,33 @@ import CmdButton from './ui/CmdButton.astro';
         <!-- Status indicator -->
         <div class="hero-status animate-fade-up animation-delay-300">
           <span class="status-dot animate-pulse-green"></span>
-          <span class="font-mono" style="font-size: 0.72rem; color: var(--color-fg-muted);">
+          <span class="font-mono status-text">
             [STATUS] Available for work
           </span>
         </div>
 
       </div>
 
-      <!-- Right: logo -->
-      <div class="hero-logo-wrap animate-fade-up animation-delay-225">
-        <span class="hero-logo"></span>
+      <!-- Right: logo / terminal -->
+      <div class="hero-logo-wrap animate-fade-up animation-delay-225" id="hero-right-col">
+        <span class="hero-logo" id="hero-logo-el"></span>
+
+        <!-- Terminal panel (replaces logo when open) -->
+        <div id="hero-terminal" class="hero-terminal font-mono" role="dialog" aria-label="Interactive terminal">
+          <div class="ht-bar">
+            <span class="ht-dot" style="background:#FF5F57;"></span>
+            <span class="ht-dot" style="background:#FEBC2E;"></span>
+            <span class="ht-dot ht-close" id="ht-close-btn" style="background:#28C840;" title="close"></span>
+            <span class="ht-title">~/terminal — arifin@portfolio</span>
+          </div>
+          <div class="ht-output" id="ht-output"></div>
+          <div class="ht-input-row">
+            <span class="ht-prompt">$</span>
+            <input id="ht-input" class="ht-input" type="text"
+                   autocomplete="off" spellcheck="false"
+                   placeholder="type a command…" aria-label="Terminal input" />
+          </div>
+        </div>
       </div>
 
     </div>
@@ -260,6 +280,221 @@ import CmdButton from './ui/CmdButton.astro';
   }
 </script>
 
+<!-- Interactive terminal logic -->
+<script>
+  // ── DOM refs ────────────────────────────────────────────────────────────────
+  const bootBtn   = document.getElementById('boot-line-btn')  as HTMLElement | null;
+  const terminal  = document.getElementById('hero-terminal')  as HTMLElement | null;
+  const output    = document.getElementById('ht-output')      as HTMLElement | null;
+  const input     = document.getElementById('ht-input')       as HTMLInputElement | null;
+  const closeBtn  = document.getElementById('ht-close-btn')   as HTMLElement | null;
+  const rightCol  = document.getElementById('hero-right-col') as HTMLElement | null;
+  const logoEl    = document.getElementById('hero-logo-el')   as HTMLElement | null;
+
+  if (!bootBtn || !terminal || !output || !input) throw new Error();
+
+  let isOpen   = false;
+  let isTyping = false;
+  const history: string[] = [];
+  let histIdx = -1;
+
+  // ── Commands ────────────────────────────────────────────────────────────────
+  type Lines = string[];
+  const COMMANDS: Record<string, () => Lines> = {
+    help: () => [
+      '',
+      `  <span class="tc-green">Available commands:</span>`,
+      `  <span class="tc-cyan">whoami</span>       — who am I`,
+      `  <span class="tc-cyan">skills</span>       — tech stack`,
+      `  <span class="tc-cyan">experience</span>   — work history`,
+      `  <span class="tc-cyan">contact</span>      — get in touch`,
+      `  <span class="tc-cyan">ls</span>           — list sections`,
+      `  <span class="tc-cyan">cat bio.txt</span>  — read my bio`,
+      `  <span class="tc-cyan">clear</span>        — clear terminal`,
+      `  <span class="tc-cyan">exit</span>         — close terminal`,
+      `  <span class="tc-dim">// psst: try "sudo hire me"</span>`,
+      '',
+    ],
+    whoami: () => [
+      '',
+      `  <span class="tc-green">Arifin Yunianta</span>`,
+      `  Backend Developer · Indonesia`,
+      `  PHP · Laravel · Python · MySQL`,
+      `  Status: <span class="tc-green">● Available for work</span>`,
+      '',
+    ],
+    skills: () => [
+      '',
+      `  <span class="tc-dim">Languages  :</span> PHP, Python, JavaScript`,
+      `  <span class="tc-dim">Frameworks :</span> Laravel, Bootstrap`,
+      `  <span class="tc-dim">Databases  :</span> MySQL, PostgreSQL`,
+      `  <span class="tc-dim">Tools      :</span> Git, Docker, Linux`,
+      `  <span class="tc-cyan">Learning   :</span> Go, Redis, Kubernetes`,
+      '',
+    ],
+    experience: () => [
+      '',
+      `  <span class="tc-green">Backend Developer</span> · Nama Perusahaan`,
+      `  <span class="tc-dim">2023 — Present · Remote</span>`,
+      '',
+      `  <span class="tc-green">Junior Backend Developer</span> · Nama Perusahaan`,
+      `  <span class="tc-dim">2021 — 2023 · Jakarta</span>`,
+      '',
+    ],
+    contact: () => {
+      setTimeout(() => document.getElementById('contact')
+        ?.scrollIntoView({ behavior: 'smooth' }), 500);
+      return ['', '  Navigating to contact…', `  <span class="tc-green">✓ Done</span>`, ''];
+    },
+    ls: () => [
+      '',
+      `  <span class="tc-green">about/</span>  <span class="tc-green">experience/</span>  <span class="tc-green">projects/</span>  <span class="tc-green">contact/</span>`,
+      '',
+    ],
+    'cat bio.txt': () => [
+      '',
+      `  Backend developer passionate about building`,
+      `  efficient, scalable, and maintainable systems.`,
+      `  I enjoy database design, API development,`,
+      `  and optimizing application performance.`,
+      '',
+    ],
+    'sudo hire me': () => [
+      '',
+      `  [sudo] password for recruiter: <span class="tc-dim">••••••••</span>`,
+      `  Verifying credentials…`,
+      `  <span class="tc-green">✓ Great taste in developers: confirmed</span>`,
+      `  Fetching package: <span class="tc-cyan">arifin-yunianta@latest</span>`,
+      `  Installing  <span class="tc-green">████████████████</span>  100%`,
+      '',
+      `  <span class="tc-green">✓ Best decision you'll make today.</span>`,
+      '',
+    ],
+    clear: () => [],
+    exit:  () => [],
+  };
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+  function addLine(html: string) {
+    const div = document.createElement('div');
+    div.className = 'ht-line';
+    div.innerHTML = html;
+    output!.appendChild(div);
+    output!.scrollTop = output!.scrollHeight;
+  }
+
+  function addPrompt(cmd: string) {
+    addLine(`<span class="tc-green">$</span> <span class="tc-fg">${escHtml(cmd)}</span>`);
+  }
+
+  function escHtml(s: string) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function printLines(lines: string[], delay = 40) {
+    for (const l of lines) {
+      addLine(l);
+      output!.scrollTop = output!.scrollHeight;
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+
+  async function runCmd(raw: string) {
+    if (isTyping) return;
+    isTyping = true;
+    const cmd = raw.trim();
+
+    if (cmd === '') { isTyping = false; return; }
+
+    addPrompt(cmd);
+
+    if (cmd === 'clear') {
+      output!.innerHTML = '';
+      isTyping = false;
+      return;
+    }
+    if (cmd === 'exit') {
+      isTyping = false;
+      closeTerminal();
+      return;
+    }
+
+    const fn = COMMANDS[cmd.toLowerCase()];
+    if (fn) {
+      await printLines(fn());
+    } else {
+      await printLines([
+        `  <span class="tc-red">command not found:</span> ${escHtml(cmd)}`,
+        `  Type <span class="tc-cyan">help</span> for available commands.`,
+        '',
+      ]);
+    }
+    isTyping = false;
+  }
+
+  // ── Open / Close ─────────────────────────────────────────────────────────────
+  async function openTerminal() {
+    isOpen = true;
+    output!.innerHTML = '';
+    // Show right column on mobile (normally hidden)
+    if (window.innerWidth < 768) rightCol?.style.setProperty('display', 'flex');
+    // Crossfade: logo out, terminal in
+    logoEl?.classList.add('logo-hidden');
+    terminal.classList.add('open');
+    bootBtn!.setAttribute('aria-expanded', 'true');
+    bootBtn!.classList.add('active');
+    await new Promise(r => setTimeout(r, 280));
+    // Auto-run whoami
+    isTyping = true;
+    addLine(`<span class="tc-green">$</span> <span class="tc-fg">whoami</span>`);
+    await printLines(COMMANDS.whoami(), 45);
+    addLine(`  Type <span class="tc-cyan">help</span> for available commands.`);
+    addLine('');
+    isTyping = false;
+    input!.focus();
+  }
+
+  function closeTerminal() {
+    isOpen = false;
+    terminal.classList.remove('open');
+    logoEl?.classList.remove('logo-hidden');
+    if (window.innerWidth < 768) rightCol?.style.removeProperty('display');
+    bootBtn!.setAttribute('aria-expanded', 'false');
+    bootBtn!.classList.remove('active');
+  }
+
+  // ── Events ──────────────────────────────────────────────────────────────────
+  bootBtn.addEventListener('click', () => isOpen ? closeTerminal() : openTerminal());
+  bootBtn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bootBtn.click(); }
+  });
+
+  closeBtn?.addEventListener('click', (e) => { e.stopPropagation(); closeTerminal(); });
+
+  input.addEventListener('keydown', async (e) => {
+    if (e.key === 'Enter') {
+      const cmd = input.value;
+      input.value = '';
+      if (cmd.trim()) { history.unshift(cmd.trim()); histIdx = -1; }
+      await runCmd(cmd);
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      histIdx = Math.min(histIdx + 1, history.length - 1);
+      input.value = history[histIdx] ?? '';
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      histIdx = Math.max(histIdx - 1, -1);
+      input.value = histIdx < 0 ? '' : history[histIdx];
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen) closeTerminal();
+  });
+</script>
+
 <style>
   .hero-section {
     min-height: calc(100vh - 56px);
@@ -348,9 +583,132 @@ import CmdButton from './ui/CmdButton.astro';
 
   .boot-line {
     font-size: 0.875rem;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
     opacity: 0;
+    cursor: pointer;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: fit-content;
+    transition: var(--transition);
   }
+  .boot-line:hover .boot-hint { opacity: 1; }
+  .boot-line.active .boot-hint { opacity: 0; }
+  .boot-line.active > span:nth-child(2) { color: var(--color-primary) !important; }
+
+  .boot-hint {
+    font-size: 0.65rem;
+    color: var(--color-fg-dim);
+    opacity: 0.4;
+    transition: opacity 0.2s;
+  }
+
+  /* ── Logo ↔ Terminal crossfade ──────────────────────────────────────────── */
+  .hero-logo-wrap {
+    position: relative;
+    min-height: clamp(200px, 28vw, 340px);
+  }
+
+  .hero-logo {
+    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+  }
+  .hero-logo.logo-hidden {
+    opacity: 0 !important;
+    transform: scale(0.92);
+    pointer-events: none;
+  }
+
+  /* ── Terminal panel ─────────────────────────────────────────────────────── */
+  .hero-terminal {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+    pointer-events: none;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    background: var(--color-panel);
+    display: flex;
+    flex-direction: column;
+    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+  .hero-terminal.open {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+  }
+
+  .ht-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    background: var(--color-elevated);
+    border-bottom: 1px solid var(--color-border);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .ht-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .ht-close { cursor: pointer; }
+  .ht-title {
+    margin-left: 6px;
+    font-size: 0.68rem;
+    color: var(--color-fg-dim);
+  }
+
+  .ht-output {
+    padding: 0.5rem 0;
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
+
+  .ht-line {
+    font-size: 0.775rem;
+    color: var(--color-fg-muted);
+    line-height: 1.65;
+    padding: 0 0.875rem;
+    white-space: pre-wrap;
+  }
+
+  .ht-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 6px 0.875rem;
+    border-top: 1px solid var(--color-border);
+  }
+  .ht-prompt {
+    color: var(--color-primary);
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .ht-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--color-fg);
+    font-family: var(--font-mono);
+    font-size: 0.775rem;
+    caret-color: var(--color-primary);
+  }
+  .ht-input::placeholder { color: var(--color-fg-dim); }
+
+  /* Terminal color helpers */
+  .tc-green { color: var(--color-primary); }
+  .tc-cyan  { color: var(--color-cyan); }
+  .tc-red   { color: var(--color-red); }
+  .tc-dim   { color: var(--color-fg-dim); }
+  .tc-fg    { color: var(--color-fg); }
 
   .hero-name {
     font-family: var(--font-mono);
@@ -407,5 +765,11 @@ import CmdButton from './ui/CmdButton.astro';
     opacity: 0;
     animation: fadeUp 0.5s ease-out forwards;
   }
+
+  .boot-prefix    { color: var(--color-fg-dim); }
+  .boot-cmd       { color: var(--color-fg-muted); }
+  .hero-name-last { color: var(--color-fg); }
+  .role-prefix    { color: var(--color-cyan); }
+  .status-text    { font-size: 0.72rem; color: var(--color-fg-muted); }
 
 </style>
