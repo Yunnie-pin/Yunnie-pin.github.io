@@ -108,11 +108,11 @@ import { about, techStackByCategory, learningStack } from '../data/about';
           <div class="nf-table">
             <div class="nf-row">
               <span class="nf-key font-mono">location</span>
-              <span class="nf-val font-mono">Yogyakarta, Indonesia</span>
+              <span class="nf-val font-mono">{about.domicile}</span>
             </div>
             <div class="nf-row">
               <span class="nf-key font-mono">timezone</span>
-              <span class="nf-val font-mono">WIB (UTC+7)</span>
+              <span class="nf-val font-mono">{about.timezone}</span>
             </div>
             <div class="nf-row">
               <span class="nf-key font-mono">local time</span>
@@ -206,17 +206,14 @@ import { about, techStackByCategory, learningStack } from '../data/about';
     });
   }
 
-  function getWIB() {
-    const now = new Date();
-    return new Date(now.getTime() + (7 * 60 - now.getTimezoneOffset()) * 60000);
-  }
+  const TZ = 'Asia/Jakarta';
 
   function updateClock() {
-    const wib = getWIB();
+    const now = new Date();
     const timeEl = document.getElementById('nf-time');
     const dateEl = document.getElementById('nf-date');
-    if (timeEl) timeEl.textContent = wib.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    if (dateEl) dateEl.textContent = wib.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    if (timeEl) timeEl.textContent = now.toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (dateEl) dateEl.textContent = now.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   }
 
   updateClock();
