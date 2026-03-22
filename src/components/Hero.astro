@@ -73,14 +73,25 @@ import { about } from '../data/about';
 
       <!-- Right: logo / terminal -->
       <div class="hero-logo-wrap animate-fade-up animation-delay-225" id="hero-right-col">
+
+        <!-- Floating tech badges -->
+        <div class="float-badges" aria-hidden="true">
+          <span class="badge badge-primary float-badge">[Go]</span>
+          <span class="badge badge-primary float-badge">[PHP]</span>
+          <span class="badge badge-cyan float-badge">[Node.js]</span>
+          <span class="badge badge-cyan float-badge">[PostgreSQL]</span>
+          <span class="badge float-badge">[Docker]</span>
+          <span class="badge float-badge">[Redis]</span>
+        </div>
+
         <span class="hero-logo" id="hero-logo-el"></span>
 
         <!-- Terminal panel (replaces logo when open) -->
         <div id="hero-terminal" class="hero-terminal font-mono" role="dialog" aria-label="Interactive terminal">
           <div class="ht-bar">
-            <span class="ht-dot" style="background:#FF5F57;"></span>
-            <span class="ht-dot" style="background:#FEBC2E;"></span>
-            <span class="ht-dot ht-close" id="ht-close-btn" style="background:#28C840;" title="close"></span>
+            <span class="ht-dot ht-dot-action" id="ht-red-btn"    style="background:#FF5F57;" title="close"></span>
+            <span class="ht-dot ht-dot-action" id="ht-yellow-btn" style="background:#FEBC2E;" title="clear output"></span>
+            <span class="ht-dot ht-close"      id="ht-close-btn"  style="background:#28C840;" title="close"></span>
             <span class="ht-title">~/terminal — arifin@portfolio</span>
           </div>
           <div class="ht-output" id="ht-output"></div>
@@ -326,14 +337,16 @@ import { about } from '../data/about';
     help: () => [
       '',
       `  <span class="tc-green">Available commands:</span>`,
-      `  <span class="tc-cyan">whoami</span>       — who am I`,
-      `  <span class="tc-cyan">skills</span>       — tech stack`,
-      `  <span class="tc-cyan">experience</span>   — work history`,
-      `  <span class="tc-cyan">contact</span>      — get in touch`,
-      `  <span class="tc-cyan">ls</span>           — list sections`,
-      `  <span class="tc-cyan">cat bio.txt</span>  — read my bio`,
-      `  <span class="tc-cyan">clear</span>        — clear terminal`,
-      `  <span class="tc-cyan">exit</span>         — close terminal`,
+      `  <button class="ht-cmd-btn" data-cmd="whoami">whoami</button>            — who am I`,
+      `  <button class="ht-cmd-btn" data-cmd="skills">skills</button>            — tech stack`,
+      `  <button class="ht-cmd-btn" data-cmd="experience">experience</button>    — work history`,
+      `  <button class="ht-cmd-btn" data-cmd="cat bio.txt">cat bio.txt</button>  — read my bio`,
+      `  <button class="ht-cmd-btn" data-cmd="ls">ls</button>                — list sections`,
+      `  <button class="ht-cmd-btn" data-cmd="open about">open</button> <span class="tc-dim">[section]</span>       — navigate to section`,
+      `  <button class="ht-cmd-btn" data-cmd="contact">contact</button>          — scroll to contact`,
+      `  <button class="ht-cmd-btn" data-cmd="history">history</button>          — command history`,
+      `  <button class="ht-cmd-btn" data-cmd="clear">clear</button>            — clear terminal`,
+      `  <button class="ht-cmd-btn" data-cmd="exit">exit</button>             — close terminal`,
       `  <span class="tc-dim">// psst: try "sudo hire me"</span>`,
       '',
     ],
@@ -389,6 +402,15 @@ import { about } from '../data/about';
       `  <span class="tc-green">✓ Best decision you'll make today.</span>`,
       '',
     ],
+    history: () => {
+      if (history.length === 0) return ['', `  <span class="tc-dim">(no history yet)</span>`, ''];
+      const lines: Lines = [''];
+      history.slice().reverse().forEach((c, i) => {
+        lines.push(`  <span class="tc-dim">${String(i + 1).padStart(3)}</span>  <span class="tc-fg">${escHtml(c)}</span>`);
+      });
+      lines.push('');
+      return lines;
+    },
     clear: () => [],
     exit:  () => [],
   };
@@ -427,18 +449,46 @@ import { about } from '../data/about';
 
     addPrompt(cmd);
 
+    // Typing indicator
+    const indEl = document.createElement('div');
+    indEl.className = 'ht-line';
+    indEl.innerHTML = '  <span class="tc-dim animate-blink">▋</span>';
+    output!.appendChild(indEl);
+    output!.scrollTop = output!.scrollHeight;
+
     if (cmd === 'clear') {
       output!.innerHTML = '';
       isTyping = false;
       return;
     }
     if (cmd === 'exit') {
+      indEl.remove();
       isTyping = false;
       closeTerminal();
       return;
     }
 
+    // open [section] handler
+    if (cmd.toLowerCase().startsWith('open ')) {
+      const section = cmd.slice(5).trim().toLowerCase();
+      const valid = ['about', 'experience', 'projects', 'contact'];
+      indEl.remove();
+      if (valid.includes(section)) {
+        setTimeout(() => document.getElementById(section)?.scrollIntoView({ behavior: 'smooth' }), 300);
+        await printLines(['', `  Navigating to <span class="tc-cyan">${escHtml(section)}</span>…`, `  <span class="tc-green">✓ Done</span>`, '']);
+      } else {
+        await printLines([
+          `  <span class="tc-red">unknown section:</span> ${escHtml(section)}`,
+          `  Valid: <span class="tc-cyan">about  experience  projects  contact</span>`,
+          '',
+        ]);
+      }
+      isTyping = false;
+      return;
+    }
+
     const fn = COMMANDS[cmd.toLowerCase()];
+    indEl.remove();
     if (fn) {
       await printLines(fn());
     } else {
@@ -457,18 +507,26 @@ import { about } from '../data/about';
     output!.innerHTML = '';
     // Show right column on mobile (normally hidden)
     if (window.innerWidth < 768) rightCol?.style.setProperty('display', 'flex');
-    // Crossfade: logo out, terminal in
+    // Hide floating badges, crossfade: logo out, terminal in
+    rightCol?.classList.add('terminal-open');
     logoEl?.classList.add('logo-hidden');
     terminal.classList.add('open');
     bootBtn!.setAttribute('aria-expanded', 'true');
     bootBtn!.classList.add('active');
     await new Promise(r => setTimeout(r, 280));
-    // Auto-run whoami
+    // Welcome banner
     isTyping = true;
-    addLine(`<span class="tc-green">$</span> <span class="tc-fg">whoami</span>`);
-    await printLines(COMMANDS.whoami(), 45);
-    addLine(`  Type <span class="tc-cyan">help</span> for available commands.`);
-    addLine('');
+    await printLines([
+      '',
+      `  <span class="tc-green">┌──────────────────────────────┐</span>`,
+      `  <span class="tc-green">│</span>  yunnie-pin@127.0.0.1  <span class="tc-green">│</span>`,
+      `  <span class="tc-green">└──────────────────────────────┘</span>`,
+      '',
+      `  <span class="tc-dim">Last login:</span> ${new Date().toDateString()}`,
+      '',
+      `  Type <span class="tc-cyan">help</span> to see available commands.`,
+      '',
+    ], 28);
     isTyping = false;
     input!.focus();
   }
@@ -477,6 +535,7 @@ import { about } from '../data/about';
     isOpen = false;
     terminal.classList.remove('open');
     logoEl?.classList.remove('logo-hidden');
+    rightCol?.classList.remove('terminal-open');
     if (window.innerWidth < 768) rightCol?.style.removeProperty('display');
     bootBtn!.setAttribute('aria-expanded', 'false');
     bootBtn!.classList.remove('active');
@@ -488,7 +547,12 @@ import { about } from '../data/about';
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bootBtn.click(); }
   });
 
-  closeBtn?.addEventListener('click', (e) => { e.stopPropagation(); closeTerminal(); });
+  const redBtn    = document.getElementById('ht-red-btn')    as HTMLElement | null;
+  const yellowBtn = document.getElementById('ht-yellow-btn') as HTMLElement | null;
+
+  redBtn?.addEventListener('click',    (e) => { e.stopPropagation(); closeTerminal(); });
+  yellowBtn?.addEventListener('click', (e) => { e.stopPropagation(); output!.innerHTML = ''; });
+  closeBtn?.addEventListener('click',  (e) => { e.stopPropagation(); closeTerminal(); });
 
   input.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') {
@@ -496,6 +560,20 @@ import { about } from '../data/about';
       input.value = '';
       if (cmd.trim()) { history.unshift(cmd.trim()); histIdx = -1; }
       await runCmd(cmd);
+    }
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const val = input.value;
+      if (!val.trim()) return;
+      const cmds = Object.keys(COMMANDS);
+      const matches = cmds.filter(c => c.startsWith(val.toLowerCase()));
+      if (matches.length === 1) {
+        input.value = matches[0];
+      } else if (matches.length > 1) {
+        addLine('');
+        addLine(`  ${matches.map(m => `<span class="tc-cyan">${escHtml(m)}</span>`).join('  ')}`);
+        addLine('');
+      }
     }
     if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -509,9 +587,102 @@ import { about } from '../data/about';
     }
   });
 
+  // Click delegation for clickable commands in help output
+  output.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('[data-cmd]') as HTMLElement | null;
+    if (!btn || isTyping) return;
+    const cmd = btn.dataset.cmd;
+    if (cmd) runCmd(cmd);
+  });
+
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && isOpen) closeTerminal();
   });
+
+  // ── Drag to peek (snap back on release) ────────────────────────────────────
+  const htBar = terminal.querySelector('.ht-bar') as HTMLElement | null;
+  let isDragging = false;
+  let dragOriginX = 0;
+  let dragOriginY = 0;
+  let dragPlaceholder: HTMLElement | null = null;
+
+  function createDragPlaceholder() {
+    const r = terminal.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.style.cssText = `
+      position: absolute;
+      top: ${r.top + window.scrollY}px;
+      left: ${r.left + window.scrollX}px;
+      width: ${r.width}px;
+      height: ${r.height}px;
+      border-radius: 8px;
+      border: 1px dashed rgba(0,255,135,0.35);
+      background: repeating-linear-gradient(
+        -45deg,
+        transparent 0px,
+        transparent 6px,
+        rgba(0,255,135,0.04) 6px,
+        rgba(0,255,135,0.04) 12px
+      );
+      pointer-events: none;
+      z-index: 49;
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
+    `;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => { el.style.opacity = '1'; });
+    return el;
+  }
+
+  function startDrag(clientX: number, clientY: number) {
+    isDragging = true;
+    dragOriginX = clientX;
+    dragOriginY = clientY;
+    terminal.style.transition = 'none';
+    terminal.classList.add('is-dragging');
+    dragPlaceholder = createDragPlaceholder();
+  }
+
+  function moveDrag(clientX: number, clientY: number) {
+    if (!isDragging) return;
+    const dx = clientX - dragOriginX;
+    const dy = clientY - dragOriginY;
+    terminal.style.transform = `scale(1) translate(${dx}px, ${dy}px)`;
+  }
+
+  function endDrag() {
+    if (!isDragging) return;
+    isDragging = false;
+    terminal.classList.remove('is-dragging');
+    if (dragPlaceholder) dragPlaceholder.style.opacity = '0';
+    terminal.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    terminal.style.transform = 'scale(1) translateY(0)';
+    terminal.addEventListener('transitionend', () => {
+      terminal.style.transition = '';
+      terminal.style.transform = '';
+      dragPlaceholder?.remove();
+      dragPlaceholder = null;
+    }, { once: true });
+  }
+
+  // Mouse
+  htBar?.addEventListener('mousedown', (e) => {
+    if ((e.target as HTMLElement).closest('.ht-dot')) return;
+    startDrag(e.clientX, e.clientY);
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+  window.addEventListener('mouseup', () => endDrag());
+
+  // Touch
+  htBar?.addEventListener('touchstart', (e) => {
+    if ((e.target as HTMLElement).closest('.ht-dot')) return;
+    startDrag(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    if (isDragging) moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  window.addEventListener('touchend', () => endDrag());
 </script>
 
 <style>
@@ -682,7 +853,56 @@ import { about } from '../data/about';
   /* ── Logo ↔ Terminal crossfade ──────────────────────────────────────────── */
   .hero-logo-wrap {
     position: relative;
-    min-height: clamp(200px, 28vw, 340px);
+    width: clamp(300px, 40vw, 460px);
+    height: clamp(300px, 40vw, 460px);
+  }
+
+  /* ── Floating tech badges (orbit arc) ───────────────────────────────────── */
+
+  /*
+   * Orbit radius ≈ 44% from center. 6 positions at 60° intervals:
+   *   top(x)    = 50% + 44 * sin(θ)
+   *   top(y)    = 50% - 44 * cos(θ)
+   * Each badge is centered on its orbit point via translate(-50%, -50%).
+   */
+  @keyframes badgeFloat {
+    0%, 100% { transform: translate(-50%, -50%) translateY(0px);    }
+    50%       { transform: translate(-50%, -50%) translateY(-10px);  }
+  }
+
+  .float-badges {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .float-badge {
+    position: absolute;
+    pointer-events: auto;
+    animation: badgeFloat 3s ease-in-out infinite;
+    transition: opacity 0.3s ease-out;
+  }
+
+  /* Clock positions — θ=0° at 12 o'clock, clockwise every 60° */
+  .float-badge:nth-child(1) { top:  6%; left: 50%;  animation-duration: 3.2s; animation-delay: 0.0s; } /* 12 */
+  .float-badge:nth-child(2) { top: 28%; left: 88%;  animation-duration: 2.9s; animation-delay: 0.6s; } /*  2 */
+  .float-badge:nth-child(3) { top: 72%; left: 88%;  animation-duration: 3.5s; animation-delay: 1.2s; } /*  4 */
+  .float-badge:nth-child(4) { top: 94%; left: 50%;  animation-duration: 3.0s; animation-delay: 1.8s; } /*  6 */
+  .float-badge:nth-child(5) { top: 72%; left: 12%;  animation-duration: 3.1s; animation-delay: 0.9s; } /*  8 */
+  .float-badge:nth-child(6) { top: 28%; left: 12%;  animation-duration: 2.8s; animation-delay: 0.3s; } /* 10 */
+
+  /* Fade out when terminal opens — no transform conflict with animation */
+  .hero-logo-wrap.terminal-open .float-badge {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .float-badge {
+      animation: none;
+      transform: translate(-50%, -50%);
+    }
   }
 
   .hero-logo {
@@ -724,6 +944,15 @@ import { about } from '../data/about';
     background: var(--color-elevated);
     border-bottom: 1px solid var(--color-border);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    cursor: grab;
+    user-select: none;
+  }
+  .hero-terminal.is-dragging {
+    box-shadow: var(--shadow-lg), 0 0 28px rgba(0, 255, 135, 0.12);
+    border-color: rgba(0, 255, 135, 0.2);
+  }
+  .hero-terminal.is-dragging .ht-bar {
+    cursor: grabbing;
   }
   .ht-dot {
     width: 10px;
@@ -731,7 +960,8 @@ import { about } from '../data/about';
     border-radius: 50%;
     flex-shrink: 0;
   }
-  .ht-close { cursor: pointer; }
+  .ht-close, .ht-dot-action { cursor: pointer; }
+  .ht-dot-action:hover { filter: brightness(1.3); }
   .ht-title {
     margin-left: 6px;
     font-size: 0.68rem;
@@ -743,8 +973,12 @@ import { about } from '../data/about';
     flex: 1;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: var(--color-border) transparent;
+    scrollbar-color: var(--color-border-bright) transparent;
   }
+  .ht-output::-webkit-scrollbar       { width: 3px; }
+  .ht-output::-webkit-scrollbar-track { background: transparent; }
+  .ht-output::-webkit-scrollbar-thumb { background: var(--color-border-bright); border-radius: 2px; }
+  .ht-output::-webkit-scrollbar-thumb:hover { background: var(--color-primary-dim); }
 
   .ht-line {
     font-size: 0.775rem;
@@ -777,6 +1011,23 @@ import { about } from '../data/about';
     caret-color: var(--color-primary);
   }
   .ht-input::placeholder { color: var(--color-fg-dim); }
+
+  /* Clickable commands in help output */
+  .ht-cmd-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: inherit;
+    color: var(--color-cyan);
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+    transition: color 0.15s;
+  }
+  .ht-cmd-btn:hover {
+    color: var(--color-primary);
+  }
 
   /* Terminal color helpers */
   .tc-green { color: var(--color-primary); }
@@ -841,7 +1092,7 @@ import { about } from '../data/about';
     animation: fadeUp 0.5s ease-out forwards;
   }
 
-  .boot-prefix    { color: var(--color-fg-dim); }
+  .boot-prefix    { color: var(--color-primary); }
   .boot-cmd       { color: var(--color-fg-muted); }
   .hero-name-last { color: var(--color-fg); }
   .role-prefix    { color: var(--color-cyan); }
