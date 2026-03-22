@@ -1,6 +1,6 @@
 export const typewriterRoles: string[] = [
   "Backend Developer",
-  "Fulltime Fesnuk Scroller",
+  "Open Source Contributor",
   "Blockchain Enthusiast",
   "Tech Enthusiast",
 ];
