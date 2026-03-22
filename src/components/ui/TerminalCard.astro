@@ -47,8 +47,6 @@ const {
       const dotRed    = handle.querySelector<HTMLElement>('.dot-red');
       const dotYellow = handle.querySelector<HTMLElement>('.dot-yellow');
       const dotGreen  = handle.querySelector<HTMLElement>('.dot-green');
-      const body      = card.querySelector<HTMLElement>('[data-card-body]');
-
       // ── State ───────────────────────────────────────────────────────────────
       let isDragging    = false;
       let originX       = 0;
@@ -100,18 +98,24 @@ const {
 
       const isRecovering = () => !!(deletedTimer || recoveryTimer);
 
-      // ── Red dot: collapse + start recovery ─────────────────────────────────
+      // ── Red dot: close popup if active, else collapse + start recovery ───────
       dotRed?.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (card.classList.contains('popup-mode')) { closePopup(); return; }
         if (isRecovering()) { finishRecovery(true); return; }
         if (card.classList.contains('collapsed')) { card.classList.remove('collapsed'); return; }
         card.classList.add('collapsed');
         startRecovery();
       });
 
-      // ── Yellow dot: cancel recovery / restore / jiggle ─────────────────────
+      // ── Yellow dot: jiggle popup / cancel recovery / restore / jiggle ────────
       dotYellow?.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (card.classList.contains('popup-mode')) {
+          card.classList.add('jiggle');
+          card.addEventListener('animationend', () => card.classList.remove('jiggle'), { once: true });
+          return;
+        }
         if (isRecovering()) { finishRecovery(true); return; }
         if (card.classList.contains('collapsed')) {
           card.classList.remove('collapsed');
@@ -303,6 +307,17 @@ const {
   }
   .terminal-card.jiggle {
     animation: jiggle 0.4s ease-out;
+  }
+
+  @keyframes jiggle-popup {
+    0%, 100% { transform: translate(-50%, -50%) rotate(0); }
+    20%       { transform: translate(calc(-50% - 5px), -50%) rotate(-1deg); }
+    40%       { transform: translate(calc(-50% + 4px), -50%) rotate(1deg); }
+    60%       { transform: translate(calc(-50% - 3px), -50%) rotate(-0.5deg); }
+    80%       { transform: translate(calc(-50% + 2px), -50%) rotate(0.5deg); }
+  }
+  .terminal-card.popup-mode.jiggle {
+    animation: jiggle-popup 0.4s ease-out !important;
   }
 
   /* ── Popup (green dot / dblclick) ── */

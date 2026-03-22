@@ -550,8 +550,12 @@ import { about } from '../data/about';
   const redBtn    = document.getElementById('ht-red-btn')    as HTMLElement | null;
   const yellowBtn = document.getElementById('ht-yellow-btn') as HTMLElement | null;
 
-  // Red: close terminal (unchanged)
-  redBtn?.addEventListener('click', (e) => { e.stopPropagation(); closeTerminal(); });
+  // Red: close popup if in popup mode, otherwise close terminal
+  redBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (terminal.classList.contains('ht-popup-mode')) { closeHtPopup(); return; }
+    closeTerminal();
+  });
 
   // Yellow: jiggle
   yellowBtn?.addEventListener('click', (e) => {
