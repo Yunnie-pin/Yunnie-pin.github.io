@@ -53,6 +53,8 @@ const {
       let originY       = 0;
       let placeholder:   HTMLElement | null = null;
       let popupOverlay:  HTMLElement | null = null;
+      let portalParent:  Element | null = null;
+      let portalNext:    ChildNode | null = null;
       let recoveryEl:    HTMLElement | null = null;
       let deletedTimer:  ReturnType<typeof setTimeout> | null = null;
       let recoveryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -131,12 +133,15 @@ const {
         if (recoveryTimer) finishRecovery(false);
         if (card.classList.contains('collapsed')) card.classList.remove('collapsed');
 
+        // Portal: move card to body so it escapes parent stacking context
+        portalParent = card.parentElement;
+        portalNext   = card.nextSibling;
+        document.body.appendChild(card);
+
         popupOverlay = document.createElement('div');
         popupOverlay.style.cssText = `
           position: fixed; inset: 0;
-          background: rgba(0,0,0,0.65);
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
+          background: rgba(0,0,0,0.72);
           z-index: 999;
           opacity: 0;
           transition: opacity 0.2s ease-out;
@@ -157,6 +162,12 @@ const {
           card.classList.remove('popup-mode', 'popup-closing');
           popupOverlay?.remove();
           popupOverlay = null;
+          // Restore card to original position
+          if (portalParent) {
+            portalParent.insertBefore(card, portalNext ?? null);
+            portalParent = null;
+            portalNext   = null;
+          }
           document.removeEventListener('keydown', escHandler);
         }, { once: true });
       }
