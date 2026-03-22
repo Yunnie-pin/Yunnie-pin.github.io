@@ -36,13 +36,13 @@ import { about, techStackByCategory, learningStack } from '../data/about';
           </p>
 
           <!-- Quick stats -->
-          <div class="quick-stats">
+          <div class="quick-stats" id="quick-stats">
             <div class="stat-item">
-              <span class="stat-value phosphor font-mono">{about.stats.years}</span>
+              <span class="stat-value phosphor font-mono" data-count-up={about.stats.years}>0</span>
               <span class="stat-label">Year Experience</span>
             </div>
             <div class="stat-item">
-              <span class="stat-value phosphor font-mono">{about.stats.projects}</span>
+              <span class="stat-value phosphor font-mono" data-count-up={about.stats.projects}>0</span>
               <span class="stat-label">Project/Product</span>
             </div>
             <div class="stat-item">
@@ -54,7 +54,7 @@ import { about, techStackByCategory, learningStack } from '../data/about';
       </TerminalCard>
 
       <!-- Tech stack card -->
-      <TerminalCard title="~/about/tech-stack.sh" class="stack-card">
+      <TerminalCard title="~/about/tech-stack.sh" class="stack-card" id="stack-card">
         <div class="stack-content">
           <TerminalPrompt command="cat tech_stack.txt" style="margin-bottom: 1rem;" />
           <div class="stack-categories">
@@ -206,6 +206,69 @@ import { about, techStackByCategory, learningStack } from '../data/about';
     });
   }
 
+  // ── Tech stack badges: stagger cascade ──────────────────────────────────
+  const stackCard = document.getElementById('stack-card');
+  if (stackCard) {
+    const badges = stackCard.querySelectorAll<HTMLElement>('.badge');
+    badges.forEach((b) => { b.style.opacity = '0'; b.style.transform = 'scale(0.82)'; });
+
+    const stackObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        stackObserver.disconnect();
+        badges.forEach((badge, i) => {
+          badge.style.transition = `opacity 0.28s ease-out ${i * 40}ms, transform 0.28s cubic-bezier(0.34,1.56,0.64,1) ${i * 40}ms`;
+          badge.style.opacity = '1';
+          badge.style.transform = 'scale(1)';
+        });
+      });
+    }, { threshold: 0.2 });
+
+    stackObserver.observe(stackCard);
+  }
+
+  // ── Quick stats: stagger + count-up ─────────────────────────────────────
+  const statsEl = document.getElementById('quick-stats');
+  if (statsEl) {
+    const items = statsEl.querySelectorAll<HTMLElement>('.stat-item');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        observer.disconnect();
+
+        items.forEach((item, i) => {
+          item.style.animationDelay = `${i * 120}ms`;
+          item.classList.add('stat-animate-in');
+
+          const valueEl = item.querySelector<HTMLElement>('[data-count-up]');
+          if (!valueEl) return;
+          const raw = valueEl.dataset.countUp ?? '0';
+          const target = parseInt(raw, 10);
+          const suffix = raw.replace(String(target), '');
+          if (!target) return;
+
+          setTimeout(() => {
+            const duration = 900;
+            const start = performance.now();
+            function tick(now: number) {
+              const elapsed = now - start;
+              const progress = Math.min(elapsed / duration, 1);
+              // ease-out cubic
+              const eased = 1 - Math.pow(1 - progress, 3);
+              const current = Math.round(eased * target);
+              valueEl.textContent = current + (progress >= 1 ? suffix : '');
+              if (progress < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+          }, i * 120);
+        });
+      });
+    }, { threshold: 0.4 });
+
+    observer.observe(statsEl);
+  }
+
   const TZ = 'Asia/Jakarta';
 
   function updateClock() {
@@ -283,6 +346,14 @@ import { about, techStackByCategory, learningStack } from '../data/about';
     display: flex;
     flex-direction: column;
     gap: 4px;
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  @keyframes stat-in {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .stat-item.stat-animate-in {
+    animation: stat-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
   .stat-value {
     font-size: 1.5rem;
@@ -359,6 +430,17 @@ import { about, techStackByCategory, learningStack } from '../data/about';
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
+  }
+
+  /* Badge hover: lift + glow */
+  .stack-card :global(.badge) {
+    cursor: default;
+    transition: transform 0.18s ease-out, box-shadow 0.18s ease-out, filter 0.18s ease-out;
+  }
+  .stack-card :global(.badge:hover) {
+    transform: translateY(-2px) scale(1.06);
+    filter: brightness(1.25);
+    box-shadow: 0 4px 14px rgba(0, 255, 135, 0.18);
   }
 
   .bio-text {
