@@ -107,18 +107,37 @@ const canonicalURL = Astro.url;
     <!-- Mobile overlay backdrop -->
     <div id="mobile-overlay" class="mobile-overlay" aria-hidden="true"></div>
 
-    <!-- Mobile top bar (hidden on desktop) -->
+    <!-- Mobile top bar (logo only, no hamburger) -->
     <div class="mobile-topbar">
       <a href="#hero" class="nav-logo">
         <span class="nav-logo-img" aria-hidden="true"></span>
         ~/Yunnie-pin
       </a>
-      <button id="hamburger" class="hamburger" aria-label="Toggle navigation" aria-expanded="false">
-        <span class="ham-bar"></span>
-        <span class="ham-bar"></span>
-        <span class="ham-bar"></span>
-      </button>
     </div>
+
+    <!-- Mobile Bottom Tab Bar -->
+    <nav class="mobile-bottom-tab" aria-label="Mobile navigation">
+      <a href="#hero" class="tab-item" data-tab="hero" aria-label="Home">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>home</span>
+      </a>
+      <a href="#about" class="tab-item" data-tab="about" aria-label="About">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        <span>about</span>
+      </a>
+      <a href="#experience" class="tab-item" data-tab="experience" aria-label="Experience">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+        <span>exp</span>
+      </a>
+      <a href="#projects" class="tab-item" data-tab="projects" aria-label="Projects">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <span>projects</span>
+      </a>
+      <a href="#contact" class="tab-item" data-tab="contact" aria-label="Contact">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <span>contact</span>
+      </a>
+    </nav>
 
     <!-- Sidebar (sticky on desktop, slide-in on mobile) -->
     <aside class="sidebar" id="sidebar">
@@ -256,23 +275,36 @@ const canonicalURL = Astro.url;
 
   // ── Scroll-Spy ────────────────────────────────────────────────────────────
   const navLinks = document.querySelectorAll<HTMLAnchorElement>('.nav-link[data-section]');
-  const sections = document.querySelectorAll<HTMLElement>('section[id]');
+  const sections = Array.from(document.querySelectorAll<HTMLElement>('section[id]'));
+  const tabItems = document.querySelectorAll<HTMLAnchorElement>('.tab-item[data-tab]');
 
   const isMobile = () => window.innerWidth < 1024;
 
-  const spyObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          navLinks.forEach((link) => {
-            link.classList.toggle('active', link.dataset.section === entry.target.id);
-          });
-        }
-      });
-    },
-    { threshold: 0.35, rootMargin: '-48px 0px 0px 0px' }
-  );
-  sections.forEach((s) => spyObserver.observe(s));
+  function getActiveId(): string {
+    // Offset: topbar height on mobile, 0 on desktop + small buffer
+    const offset = isMobile() ? 56 : 80;
+    let current = sections[0]?.id ?? '';
+    for (const section of sections) {
+      if (section.getBoundingClientRect().top <= offset) {
+        current = section.id;
+      }
+    }
+    return current;
+  }
+
+  function updateSpy() {
+    const id = getActiveId();
+    navLinks.forEach((l) => l.classList.toggle('active', l.dataset.section === id));
+    tabItems.forEach((t) => t.classList.toggle('active', t.dataset.tab === id));
+  }
+
+  // Set initial active state on load
+  updateSpy();
+
+  let spyRaf: number | null = null;
+  window.addEventListener('scroll', () => {
+    if (!spyRaf) spyRaf = requestAnimationFrame(() => { updateSpy(); spyRaf = null; });
+  }, { passive: true });
 
   // ── Hamburger / Sidebar Toggle ────────────────────────────────────────────
   const hamburger = document.getElementById('hamburger') as HTMLButtonElement | null;
