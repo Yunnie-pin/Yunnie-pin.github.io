@@ -184,12 +184,13 @@ body {
 
 /* ─── Terminal Card ───────────────────────────────────────────────────────── */
 .terminal-card {
+  --proximity: 0;
   background: var(--color-panel);
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(var(--color-primary-rgb), calc(0.12 + 0.14 * var(--proximity)));
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  transition: border-color 0.3s ease-out, box-shadow 0.3s ease-out,
-              background 0.3s ease-out, transform 0.25s ease-out;
+  box-shadow: var(--shadow-md),
+              0 0 calc(28px * var(--proximity)) rgba(var(--color-primary-rgb), calc(0.12 * var(--proximity)));
+  transition: background 0.3s ease-out, transform 0.25s ease-out;
 }
 .terminal-card:hover {
   border-color: rgba(var(--color-primary-rgb),0.22);
@@ -218,6 +219,7 @@ body {
 
 /* ─── Badge ──────────────────────────────────────────────────────────────── */
 .badge {
+  --proximity: 0;
   display: inline-flex;
   align-items: center;
   font-family: var(--font-mono);
@@ -229,6 +231,8 @@ body {
   color: var(--color-fg-muted);
   transition: var(--transition);
   white-space: nowrap;
+  filter: brightness(calc(1 + 0.4 * var(--proximity)));
+  transform: translateY(calc(-1px * var(--proximity)));
 }
 .badge-primary {
   border-color: rgba(var(--color-primary-rgb),0.30);
@@ -661,6 +665,7 @@ body {
   list-style: none;
 }
 .nav-link {
+  --proximity: 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -671,6 +676,8 @@ body {
   padding: 0.5rem 0.75rem;
   border-radius: var(--radius-md);
   transition: var(--transition);
+  background: rgba(var(--color-primary-rgb), calc(0.04 * var(--proximity)));
+  box-shadow: inset 2px 0 0 rgba(var(--color-primary-rgb), calc(0.6 * var(--proximity)));
 }
 .nav-link:hover {
   color: var(--color-primary);

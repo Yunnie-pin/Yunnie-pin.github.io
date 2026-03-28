@@ -142,15 +142,18 @@ const ICON_MAP: Record<string, { path: string; hex: string }> = {
   }
 
   .social-link {
+    --proximity: 0;
     display: flex;
     align-items: center;
     gap: 0.875rem;
     padding: 0.75rem 1rem;
     border-radius: var(--radius-md);
-    border: 1px solid var(--color-border);
+    border: 1px solid rgba(var(--color-primary-rgb), calc(0.12 + 0.20 * var(--proximity)));
     background: var(--color-muted);
     text-decoration: none;
-    transition: var(--transition);
+    transition: background 0.2s, transform 0.2s;
+    box-shadow: 0 0 calc(16px * var(--proximity)) rgba(var(--color-primary-rgb), calc(0.10 * var(--proximity)));
+    transform: translateX(calc(3px * var(--proximity)));
   }
   .social-link:hover {
     border-color: var(--color-border-bright);

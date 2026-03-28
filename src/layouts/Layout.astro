@@ -508,6 +508,51 @@ const canonicalURL = Astro.url;
 
     }
   }
+
+  // ── Proximity Glow ────────────────────────────────────────────────────────
+  if (
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+    window.matchMedia('(pointer: fine)').matches
+  ) {
+    const RADIUS = 200; // px — glow radius
+    const SELECTORS = '.nav-link, .badge, .terminal-card, .swatch-dot-btn, .social-link';
+
+    let proxX = -9999, proxY = -9999;
+
+    document.addEventListener('mousemove', (e) => {
+      proxX = e.clientX;
+      proxY = e.clientY;
+    }, { passive: true });
+
+    // Cache element list once — static site, DOM doesn't change after load
+    const proximityEls = Array.from(
+      document.querySelectorAll<HTMLElement>(SELECTORS)
+    );
+
+    function updateProximity() {
+      // Batch: read all rects first, then write — avoids layout thrashing
+      const rects = proximityEls.map(el => el.getBoundingClientRect());
+
+      proximityEls.forEach((el, i) => {
+        const rect = rects[i];
+        // Skip elements entirely outside viewport
+        if (rect.bottom < -80 || rect.top > window.innerHeight + 80) {
+          if (el.style.getPropertyValue('--proximity') !== '0') {
+            el.style.setProperty('--proximity', '0');
+          }
+          return;
+        }
+        const cx = rect.left + rect.width  / 2;
+        const cy = rect.top  + rect.height / 2;
+        const dist = Math.sqrt((proxX - cx) ** 2 + (proxY - cy) ** 2);
+        el.style.setProperty('--proximity', Math.max(0, 1 - dist / RADIUS).toFixed(3));
+      });
+
+      requestAnimationFrame(updateProximity);
+    }
+
+    updateProximity();
+  }
 </script>
 
 <style is:global>

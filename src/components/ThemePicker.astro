@@ -149,9 +149,9 @@ const themes = [
     });
   }
 
-  // Apply theme on swatch click
+  // Apply theme on swatch click (handles both floating .swatch and sidebar .swatch-dot-btn)
   document.getElementById('theme-swatches')?.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLElement>('.swatch');
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('.swatch, .swatch-dot-btn');
     if (!btn?.dataset.theme) return;
     applyTheme(btn.dataset.theme);
   });
@@ -200,6 +200,7 @@ const themes = [
   }
 
   .swatch-dot-btn {
+    --proximity: 0;
     background: transparent;
     border: none;
     padding: 3px;
@@ -209,17 +210,18 @@ const themes = [
     align-items: center;
     justify-content: center;
     transition: transform 0.15s ease-out;
+    transform: scale(calc(1 + 0.2 * var(--proximity)));
   }
-  .swatch-dot-btn:hover { transform: scale(1.25); }
+  .swatch-dot-btn:hover { transform: scale(1.3); }
 
   .swatch-dot-sm {
     width: 12px;
     height: 12px;
     border-radius: 50%;
     background: var(--sw);
-    box-shadow: 0 0 6px var(--sw);
+    box-shadow: 0 0 calc(4px + 8px * var(--proximity)) var(--sw);
     display: block;
-    transition: box-shadow 0.15s, width 0.15s, height 0.15s;
+    transition: width 0.15s, height 0.15s;
   }
 
   .swatch-dot-btn.active .swatch-dot-sm {
