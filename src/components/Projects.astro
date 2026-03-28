@@ -283,7 +283,7 @@ const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
     transition: var(--transition);
   }
   .project-link:hover {
-    text-shadow: 0 0 8px rgba(0, 255, 135, 0.50);
+    text-shadow: 0 0 8px rgba(var(--color-primary-rgb),0.50);
   }
 
   .cta-wrap {

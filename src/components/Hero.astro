@@ -689,13 +689,13 @@ import { about } from '../data/about';
       width: ${r.width}px;
       height: ${r.height}px;
       border-radius: 8px;
-      border: 1px dashed rgba(0,255,135,0.35);
+      border: 1px dashed rgba(var(--color-primary-rgb),0.35);
       background: repeating-linear-gradient(
         -45deg,
         transparent 0px,
         transparent 6px,
-        rgba(0,255,135,0.04) 6px,
-        rgba(0,255,135,0.04) 12px
+        rgba(var(--color-primary-rgb),0.04) 6px,
+        rgba(var(--color-primary-rgb),0.04) 12px
       );
       pointer-events: none;
       z-index: 49;
@@ -806,7 +806,7 @@ import { about } from '../data/about';
     left: 10%;
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba(0,255,135,0.04) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(var(--color-primary-rgb),0.04) 0%, transparent 70%);
     pointer-events: none;
   }
 
@@ -842,7 +842,7 @@ import { about } from '../data/about';
     content: '';
     position: absolute;
     inset: -15%;
-    background: radial-gradient(circle, rgba(0, 255, 135, 0.07) 0%, transparent 65%);
+    background: radial-gradient(circle, rgba(var(--color-primary-rgb),0.07) 0%, transparent 65%);
     pointer-events: none;
     transition: background 0.3s;
   }
@@ -887,7 +887,7 @@ import { about } from '../data/about';
   /* One-time attention pulse — plays 3x after the boot line fades in */
   @keyframes hintAttention {
     0%, 100% { opacity: 0.85; color: var(--color-fg-muted); }
-    50%       { opacity: 1;    color: var(--color-primary); text-shadow: 0 0 8px rgba(0,255,135,0.45); }
+    50%       { opacity: 1;    color: var(--color-primary); text-shadow: 0 0 8px rgba(var(--color-primary-rgb),0.45); }
   }
   .boot-hint.attention {
     animation: hintAttention 0.9s ease-in-out 3;
@@ -1038,8 +1038,8 @@ import { about } from '../data/about';
     user-select: none;
   }
   .hero-terminal.is-dragging {
-    box-shadow: var(--shadow-lg), 0 0 28px rgba(0, 255, 135, 0.12);
-    border-color: rgba(0, 255, 135, 0.2);
+    box-shadow: var(--shadow-lg), 0 0 28px rgba(var(--color-primary-rgb),0.12);
+    border-color: rgba(var(--color-primary-rgb),0.2);
   }
   .hero-terminal.is-dragging .ht-bar {
     cursor: grabbing;
@@ -1211,7 +1211,7 @@ import { about } from '../data/about';
     height: 8px;
     background: var(--color-primary);
     border-radius: 50%;
-    box-shadow: 0 0 6px rgba(0,255,135,0.60);
+    box-shadow: 0 0 6px rgba(var(--color-primary-rgb),0.60);
   }
 
   /* Override opacity-0 from animate-fade-up so animation plays correctly */

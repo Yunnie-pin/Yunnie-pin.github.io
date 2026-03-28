@@ -199,11 +199,11 @@ const {
           width: ${r.width}px;
           height: ${r.height}px;
           border-radius: 8px;
-          border: 1px dashed rgba(0,255,135,0.35);
+          border: 1px dashed rgba(var(--color-primary-rgb),0.35);
           background: repeating-linear-gradient(
             -45deg,
             transparent 0px, transparent 6px,
-            rgba(0,255,135,0.04) 6px, rgba(0,255,135,0.04) 12px
+            rgba(var(--color-primary-rgb),0.04) 6px, rgba(var(--color-primary-rgb),0.04) 12px
           );
           pointer-events: none;
           z-index: 49;
@@ -286,8 +286,8 @@ const {
 
   /* ── Dragging state ── */
   [data-drag-card].is-dragging {
-    box-shadow: 0 8px 32px rgba(0,0,0,0.80), 0 0 28px rgba(0,255,135,0.12);
-    border-color: rgba(0,255,135,0.2);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.80), 0 0 28px rgba(var(--color-primary-rgb),0.12);
+    border-color: rgba(var(--color-primary-rgb),0.2);
     z-index: 50;
     position: relative;
   }
@@ -419,7 +419,7 @@ const {
     height: 100%;
     width: 0%;
     background: var(--color-primary);
-    box-shadow: 0 0 8px rgba(0, 255, 135, 0.55);
+    box-shadow: 0 0 8px rgba(var(--color-primary-rgb),0.55);
     animation: tc-fill linear forwards;
   }
   @keyframes tc-fill {

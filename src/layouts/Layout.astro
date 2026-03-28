@@ -2,6 +2,7 @@
 import ThemePicker from '../components/ThemePicker.astro';
 import { about } from '../data/about';
 import { socials } from '../data/contact';
+import { House, User, Briefcase, Code, Envelope, MapPin } from '@phosphor-icons/react';
 
 interface Props {
   title?: string;
@@ -77,6 +78,7 @@ const canonicalURL = Astro.url;
           var s = document.documentElement.style;
           s.setProperty('--color-primary',     t.c);
           s.setProperty('--color-primary-dim', t.d);
+          s.setProperty('--color-primary-rgb', t.r);
           s.setProperty('--glow-sm',    '0 0 8px  rgba(' + t.r + ', 0.15)');
           s.setProperty('--glow-md',    '0 0 16px rgba(' + t.r + ', 0.20)');
           s.setProperty('--glow-lg',    '0 0 32px rgba(' + t.r + ', 0.25)');
@@ -118,23 +120,23 @@ const canonicalURL = Astro.url;
     <!-- Mobile Bottom Tab Bar -->
     <nav class="mobile-bottom-tab" aria-label="Mobile navigation">
       <a href="#hero" class="tab-item" data-tab="hero" aria-label="Home">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <House size={20} weight="thin" aria-hidden="true" />
         <span>home</span>
       </a>
       <a href="#about" class="tab-item" data-tab="about" aria-label="About">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        <User size={20} weight="thin" aria-hidden="true" />
         <span>about</span>
       </a>
       <a href="#experience" class="tab-item" data-tab="experience" aria-label="Experience">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+        <Briefcase size={20} weight="thin" aria-hidden="true" />
         <span>exp</span>
       </a>
       <a href="#projects" class="tab-item" data-tab="projects" aria-label="Projects">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <Code size={20} weight="thin" aria-hidden="true" />
         <span>projects</span>
       </a>
       <a href="#contact" class="tab-item" data-tab="contact" aria-label="Contact">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <Envelope size={20} weight="thin" aria-hidden="true" />
         <span>contact</span>
       </a>
     </nav>
@@ -161,7 +163,7 @@ const canonicalURL = Astro.url;
         <p class="sidebar-profile-name">{about.name}</p>
         <p class="sidebar-profile-role">Backend Developer</p>
         <p class="sidebar-profile-location">
-          <span aria-hidden="true">📍</span> {about.domicile}
+          <MapPin size={12} weight="thin" aria-hidden="true" /> {about.domicile}
         </p>
         <div class="sidebar-status">
           <span class="sidebar-status-dot" aria-hidden="true"></span>
@@ -172,10 +174,10 @@ const canonicalURL = Astro.url;
       <!-- Nav links -->
       <nav style="flex: 1; margin-top: 1.5rem;">
         <ul class="nav-links" id="nav-links">
-          <li><a href="#about"      class="nav-link" data-section="about"     >// about</a></li>
-          <li><a href="#experience" class="nav-link" data-section="experience">// experience</a></li>
-          <li><a href="#projects"   class="nav-link" data-section="projects"  >// projects</a></li>
-          <li><a href="#contact"    class="nav-link" data-section="contact"   >// contact</a></li>
+          <li><a href="#about"      class="nav-link" data-section="about"     ><User      size={14} weight="thin" aria-hidden="true" />// about</a></li>
+          <li><a href="#experience" class="nav-link" data-section="experience"><Briefcase size={14} weight="thin" aria-hidden="true" />// experience</a></li>
+          <li><a href="#projects"   class="nav-link" data-section="projects"  ><Code      size={14} weight="thin" aria-hidden="true" />// projects</a></li>
+          <li><a href="#contact"    class="nav-link" data-section="contact"   ><Envelope  size={14} weight="thin" aria-hidden="true" />// contact</a></li>
         </ul>
       </nav>
 

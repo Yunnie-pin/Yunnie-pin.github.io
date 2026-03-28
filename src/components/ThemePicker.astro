@@ -16,25 +16,26 @@ const themes = [
 
 <div class:list={["theme-picker", { "theme-picker--sidebar": sidebar }]} id="theme-picker">
   {sidebar ? (
-    <!-- Sidebar mode: inline, always expanded -->
+    <!-- Sidebar mode: compact dot row + active label -->
     <div class="theme-sidebar-block">
       <p class="theme-panel-header font-mono">
         <span style="color: var(--color-primary);">$</span> set --theme
+        <span class="theme-active-label" id="theme-active-label"></span>
       </p>
-      <div class="theme-swatches theme-swatches--sidebar" id="theme-swatches">
+      <div class="theme-dots-row" id="theme-swatches">
         {themes.map((t) => (
           <button
-            class="swatch"
+            class="swatch-dot-btn"
             data-theme={t.key}
             data-color={t.color}
             data-dim={t.dim}
             data-rgb={t.rgb}
+            data-name={t.name}
             style={`--sw: ${t.color};`}
             title={t.name}
             aria-label={`Theme: ${t.name}`}
           >
-            <span class="swatch-dot"></span>
-            <span class="swatch-name font-mono">{t.name}</span>
+            <span class="swatch-dot-sm"></span>
           </button>
         ))}
       </div>
@@ -95,6 +96,7 @@ const themes = [
     const root = document.documentElement;
     root.style.setProperty('--color-primary',     t.color);
     root.style.setProperty('--color-primary-dim', t.dim);
+    root.style.setProperty('--color-primary-rgb', t.rgb);
     root.style.setProperty('--glow-sm',    `0 0 8px  rgba(${t.rgb}, 0.15)`);
     root.style.setProperty('--glow-md',    `0 0 16px rgba(${t.rgb}, 0.20)`);
     root.style.setProperty('--glow-lg',    `0 0 32px rgba(${t.rgb}, 0.25)`);
@@ -105,9 +107,14 @@ const themes = [
     if (dot) dot.style.background = t.color;
 
     // Sync active swatch
-    document.querySelectorAll('.swatch').forEach((el) => {
+    document.querySelectorAll('.swatch, .swatch-dot-btn').forEach((el) => {
       (el as HTMLElement).classList.toggle('active', (el as HTMLElement).dataset.theme === key);
     });
+
+    // Sync active label (sidebar mode)
+    const activeLabel = document.getElementById('theme-active-label');
+    const activeBtn = document.querySelector<HTMLElement>(`.swatch-dot-btn[data-theme="${key}"]`);
+    if (activeLabel && activeBtn) activeLabel.textContent = `[${activeBtn.dataset.name}]`;
 
     localStorage.setItem(LS_KEY, key);
   }
@@ -175,12 +182,50 @@ const themes = [
   .theme-sidebar-block {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 0.4rem;
     width: 100%;
   }
 
-  .theme-swatches--sidebar {
-    grid-template-columns: repeat(3, 1fr);
+  .theme-active-label {
+    color: var(--color-primary);
+    margin-left: 0.4rem;
+    transition: color 0.2s;
+  }
+
+  /* ── Compact dot row (sidebar) ── */
+  .theme-dots-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .swatch-dot-btn {
+    background: transparent;
+    border: none;
+    padding: 3px;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease-out;
+  }
+  .swatch-dot-btn:hover { transform: scale(1.25); }
+
+  .swatch-dot-sm {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--sw);
+    box-shadow: 0 0 6px var(--sw);
+    display: block;
+    transition: box-shadow 0.15s, width 0.15s, height 0.15s;
+  }
+
+  .swatch-dot-btn.active .swatch-dot-sm {
+    width: 14px;
+    height: 14px;
+    box-shadow: 0 0 10px var(--sw), 0 0 0 2px rgba(0,0,0,0.8), 0 0 0 3px var(--sw);
   }
 
   /* ── Toggle button ── */
