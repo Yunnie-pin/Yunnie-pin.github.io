@@ -126,6 +126,7 @@ import { about } from '../data/about';
       if (window.scrollY > 40) scrollCue.classList.add('hidden');
     }, { passive: true });
   }
+
 </script>
 
 <!-- Typewriter script -->
@@ -765,12 +766,22 @@ import { about } from '../data/about';
 
 <style>
   .hero-section {
-    min-height: calc(100vh - 56px);
+    height: 100vh;
     display: flex;
     align-items: center;
     padding: 4rem 0;
-    position: relative;
+    position: sticky;
+    top: 0;
+    z-index: 1;
     overflow: hidden;
+  }
+
+  @media (max-width: 1023px) {
+    .hero-section {
+      height: calc(100vh - 48px);
+      position: relative; /* mobile: normal scroll */
+      top: auto;
+    }
   }
 
   #hero-particles {
@@ -818,6 +829,7 @@ import { about } from '../data/about';
     align-items: center;
     justify-content: center;
     position: relative;
+    will-change: transform, opacity;
   }
   @media (min-width: 768px) {
     .hero-logo-wrap {

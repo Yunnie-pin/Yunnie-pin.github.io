@@ -1,4 +1,9 @@
 ---
+interface Props {
+  sidebar?: boolean;
+}
+const { sidebar = false } = Astro.props;
+
 const themes = [
   { name: 'Phosphor', key: 'phosphor', color: '#00FF87', dim: '#00C864', rgb: '0,255,135'   },
   { name: 'Matrix',   key: 'matrix',   color: '#00FF41', dim: '#00CC33', rgb: '0,255,65'    },
@@ -9,41 +14,67 @@ const themes = [
 ];
 ---
 
-<div class="theme-picker" id="theme-picker">
-  <!-- Panel (rendered above button via flex order) -->
-  <div class="theme-panel" id="theme-panel" role="dialog" aria-label="Theme picker">
-    <p class="theme-panel-header font-mono">
-      <span style="color: var(--color-primary);">$</span> set --theme
-    </p>
-    <div class="theme-swatches" id="theme-swatches">
-      {themes.map((t) => (
-        <button
-          class="swatch"
-          data-theme={t.key}
-          data-color={t.color}
-          data-dim={t.dim}
-          data-rgb={t.rgb}
-          style={`--sw: ${t.color};`}
-          title={t.name}
-          aria-label={`Theme: ${t.name}`}
-        >
-          <span class="swatch-dot"></span>
-          <span class="swatch-name font-mono">{t.name}</span>
-        </button>
-      ))}
+<div class:list={["theme-picker", { "theme-picker--sidebar": sidebar }]} id="theme-picker">
+  {sidebar ? (
+    <!-- Sidebar mode: inline, always expanded -->
+    <div class="theme-sidebar-block">
+      <p class="theme-panel-header font-mono">
+        <span style="color: var(--color-primary);">$</span> set --theme
+      </p>
+      <div class="theme-swatches theme-swatches--sidebar" id="theme-swatches">
+        {themes.map((t) => (
+          <button
+            class="swatch"
+            data-theme={t.key}
+            data-color={t.color}
+            data-dim={t.dim}
+            data-rgb={t.rgb}
+            style={`--sw: ${t.color};`}
+            title={t.name}
+            aria-label={`Theme: ${t.name}`}
+          >
+            <span class="swatch-dot"></span>
+            <span class="swatch-name font-mono">{t.name}</span>
+          </button>
+        ))}
+      </div>
     </div>
-  </div>
-
-  <!-- Toggle button -->
-  <button
-    class="theme-toggle font-mono"
-    id="theme-toggle"
-    aria-label="Customize theme"
-    aria-expanded="false"
-  >
-    <span class="theme-toggle-dot" id="theme-toggle-dot"></span>
-    [theme]
-  </button>
+  ) : (
+    <>
+      <!-- Floating mode: toggle + popup panel -->
+      <div class="theme-panel" id="theme-panel" role="dialog" aria-label="Theme picker">
+        <p class="theme-panel-header font-mono">
+          <span style="color: var(--color-primary);">$</span> set --theme
+        </p>
+        <div class="theme-swatches" id="theme-swatches">
+          {themes.map((t) => (
+            <button
+              class="swatch"
+              data-theme={t.key}
+              data-color={t.color}
+              data-dim={t.dim}
+              data-rgb={t.rgb}
+              style={`--sw: ${t.color};`}
+              title={t.name}
+              aria-label={`Theme: ${t.name}`}
+            >
+              <span class="swatch-dot"></span>
+              <span class="swatch-name font-mono">{t.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <button
+        class="theme-toggle font-mono"
+        id="theme-toggle"
+        aria-label="Customize theme"
+        aria-expanded="false"
+      >
+        <span class="theme-toggle-dot" id="theme-toggle-dot"></span>
+        [theme]
+      </button>
+    </>
+  )}
 </div>
 
 <script>
@@ -84,32 +115,32 @@ const themes = [
   // Restore saved theme on load
   applyTheme(localStorage.getItem(LS_KEY) ?? 'phosphor');
 
-  // Toggle panel open/close
+  // Toggle panel open/close (floating mode only)
   const toggle = document.getElementById('theme-toggle');
   const panel  = document.getElementById('theme-panel');
   const picker = document.getElementById('theme-picker');
 
-  toggle?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const open = panel?.classList.toggle('open') ?? false;
-    toggle.setAttribute('aria-expanded', String(open));
-  });
+  if (toggle && panel) {
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = panel.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', String(open));
+    });
 
-  // Close on outside click
-  document.addEventListener('click', (e) => {
-    if (!picker?.contains(e.target as Node)) {
-      panel?.classList.remove('open');
-      toggle?.setAttribute('aria-expanded', 'false');
-    }
-  });
+    document.addEventListener('click', (e) => {
+      if (!picker?.contains(e.target as Node)) {
+        panel.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+    });
 
-  // Close on Escape
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      panel?.classList.remove('open');
-      toggle?.setAttribute('aria-expanded', 'false');
-    }
-  });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        panel.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
 
   // Apply theme on swatch click
   document.getElementById('theme-swatches')?.addEventListener('click', (e) => {
@@ -120,6 +151,7 @@ const themes = [
 </script>
 
 <style>
+  /* ── Floating mode (default) ── */
   .theme-picker {
     position: fixed;
     bottom: 1.5rem;
@@ -129,6 +161,26 @@ const themes = [
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+  }
+
+  /* ── Sidebar mode ── */
+  .theme-picker--sidebar {
+    position: static;
+    bottom: auto;
+    left: auto;
+    z-index: auto;
+    width: 100%;
+  }
+
+  .theme-sidebar-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    width: 100%;
+  }
+
+  .theme-swatches--sidebar {
+    grid-template-columns: repeat(3, 1fr);
   }
 
   /* ── Toggle button ── */

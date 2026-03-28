@@ -1,5 +1,7 @@
 ---
 import ThemePicker from '../components/ThemePicker.astro';
+import { about } from '../data/about';
+import { socials } from '../data/contact';
 
 interface Props {
   title?: string;
@@ -105,32 +107,74 @@ const canonicalURL = Astro.url;
     <!-- Mobile overlay backdrop -->
     <div id="mobile-overlay" class="mobile-overlay" aria-hidden="true"></div>
 
-    <!-- Navbar -->
-    <nav class="navbar">
+    <!-- Mobile top bar (hidden on desktop) -->
+    <div class="mobile-topbar">
       <a href="#hero" class="nav-logo">
         <span class="nav-logo-img" aria-hidden="true"></span>
         ~/Yunnie-pin
       </a>
-
-      <ul class="nav-links" id="nav-links">
-        <li><a href="#about"      class="nav-link" data-section="about"     >// about</a></li>
-        <li><a href="#experience" class="nav-link" data-section="experience">// experience</a></li>
-        <li><a href="#projects"   class="nav-link" data-section="projects"  >// projects</a></li>
-        <li><a href="#contact"    class="nav-link" data-section="contact"   >// contact</a></li>
-      </ul>
-
-      <!-- Hamburger (mobile) -->
       <button id="hamburger" class="hamburger" aria-label="Toggle navigation" aria-expanded="false">
         <span class="ham-bar"></span>
         <span class="ham-bar"></span>
         <span class="ham-bar"></span>
       </button>
-    </nav>
+    </div>
 
-    <!-- Page content -->
-    <main style="padding-top: 56px;">
-      <slot />
-    </main>
+    <!-- Sidebar (sticky on desktop, slide-in on mobile) -->
+    <aside class="sidebar" id="sidebar">
+      <!-- Logo -->
+      <a href="#hero" class="nav-logo sidebar-logo">
+        <span class="nav-logo-img" aria-hidden="true"></span>
+        ~/Yunnie-pin
+      </a>
+
+      <!-- Profile Card -->
+      <div class="sidebar-profile">
+        <div class="sidebar-avatar">
+          <img
+            src={`https://avatars.githubusercontent.com/u/${about.githubId}?v=4`}
+            alt={about.name}
+            width="56"
+            height="56"
+            loading="lazy"
+          />
+        </div>
+        <p class="sidebar-profile-name">{about.name}</p>
+        <p class="sidebar-profile-role">Backend Developer</p>
+        <p class="sidebar-profile-location">
+          <span aria-hidden="true">📍</span> {about.domicile}
+        </p>
+        <div class="sidebar-status">
+          <span class="sidebar-status-dot" aria-hidden="true"></span>
+          <span>available for collab</span>
+        </div>
+      </div>
+
+      <!-- Nav links -->
+      <nav style="flex: 1; margin-top: 1.5rem;">
+        <ul class="nav-links" id="nav-links">
+          <li><a href="#about"      class="nav-link" data-section="about"     >// about</a></li>
+          <li><a href="#experience" class="nav-link" data-section="experience">// experience</a></li>
+          <li><a href="#projects"   class="nav-link" data-section="projects"  >// projects</a></li>
+          <li><a href="#contact"    class="nav-link" data-section="contact"   >// contact</a></li>
+        </ul>
+      </nav>
+
+      <!-- Theme picker (inline) -->
+      <div class="sidebar-theme">
+        <ThemePicker sidebar />
+      </div>
+
+    
+      </div>
+    </aside>
+
+    <!-- Page wrapper -->
+    <div class="page-wrapper">
+      <!-- Page content -->
+      <main>
+        <slot />
+      </main>
 
     <!-- Custom context menu -->
     <div id="ctx-menu" class="ctx-menu font-mono" role="menu" aria-label="Context menu">
@@ -153,18 +197,16 @@ const canonicalURL = Astro.url;
       </button>
     </div>
 
-    <!-- Theme picker -->
-    <ThemePicker />
-
     <!-- Back to top -->
     <button id="back-to-top" class="back-to-top font-mono" aria-label="Back to top">[↑ top]</button>
 
-    <!-- Footer -->
-    <footer style="border-top: 1px solid var(--color-border); padding: 1.5rem; text-align: center;">
-      <p class="font-mono" style="color: var(--color-fg-dim); font-size: 0.75rem;">
-        <span style="color: var(--color-primary);">$</span> echo "Built with Astro by Yunnie-pin" <span style="color: var(--color-primary);">|</span>
-      </p>
-    </footer>
+      <!-- Footer -->
+      <footer style="border-top: 1px solid var(--color-border); padding: 1.5rem; text-align: center;">
+        <p class="font-mono" style="color: var(--color-fg-dim); font-size: 0.75rem;">
+          <span style="color: var(--color-primary);">$</span> echo "Built with Astro by Yunnie-pin" <span style="color: var(--color-primary);">|</span>
+        </p>
+      </footer>
+    </div><!-- /page-wrapper -->
   </body>
 </html>
 
@@ -179,9 +221,44 @@ const canonicalURL = Astro.url;
   window.addEventListener('scroll', updateProgress, { passive: true });
   updateProgress();
 
+  // ── Heavy Smooth Scroll (lerp) ───────────────────────────────────────────
+  if (
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+    window.matchMedia('(pointer: fine)').matches
+  ) {
+    let targetY  = window.scrollY;
+    let currentY = window.scrollY;
+    const EASE   = 0.075; // lower = heavier (try 0.05–0.12)
+
+    window.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      targetY = Math.max(0, Math.min(targetY + e.deltaY, max));
+    }, { passive: false });
+
+    // Sync when user jumps via keyboard / scrollbar / anchor links
+    window.addEventListener('scroll', () => {
+      const diff = Math.abs(window.scrollY - currentY);
+      if (diff > 80) {
+        currentY = window.scrollY;
+        targetY  = window.scrollY;
+      }
+    }, { passive: true });
+
+    (function loop() {
+      currentY += (targetY - currentY) * EASE;
+      if (Math.abs(targetY - currentY) > 0.1) {
+        window.scrollTo(0, currentY);
+      }
+      requestAnimationFrame(loop);
+    })();
+  }
+
   // ── Scroll-Spy ────────────────────────────────────────────────────────────
   const navLinks = document.querySelectorAll<HTMLAnchorElement>('.nav-link[data-section]');
   const sections = document.querySelectorAll<HTMLElement>('section[id]');
+
+  const isMobile = () => window.innerWidth < 1024;
 
   const spyObserver = new IntersectionObserver(
     (entries) => {
@@ -193,17 +270,17 @@ const canonicalURL = Astro.url;
         }
       });
     },
-    { threshold: 0.35, rootMargin: '-56px 0px 0px 0px' }
+    { threshold: 0.35, rootMargin: '-48px 0px 0px 0px' }
   );
   sections.forEach((s) => spyObserver.observe(s));
 
-  // ── Hamburger Menu ────────────────────────────────────────────────────────
+  // ── Hamburger / Sidebar Toggle ────────────────────────────────────────────
   const hamburger = document.getElementById('hamburger') as HTMLButtonElement | null;
-  const navLinksEl = document.getElementById('nav-links') as HTMLUListElement | null;
-  const overlay = document.getElementById('mobile-overlay') as HTMLDivElement | null;
+  const sidebar   = document.getElementById('sidebar')   as HTMLElement | null;
+  const overlay   = document.getElementById('mobile-overlay') as HTMLDivElement | null;
 
   function closeMenu() {
-    navLinksEl?.classList.remove('open');
+    sidebar?.classList.remove('open');
     overlay?.classList.remove('visible');
     hamburger?.classList.remove('open');
     hamburger?.setAttribute('aria-expanded', 'false');
@@ -211,11 +288,11 @@ const canonicalURL = Astro.url;
   }
 
   hamburger?.addEventListener('click', () => {
-    const isOpen = navLinksEl?.classList.contains('open');
+    const isOpen = sidebar?.classList.contains('open');
     if (isOpen) {
       closeMenu();
     } else {
-      navLinksEl?.classList.add('open');
+      sidebar?.classList.add('open');
       overlay?.classList.add('visible');
       hamburger.classList.add('open');
       hamburger.setAttribute('aria-expanded', 'true');
@@ -224,8 +301,12 @@ const canonicalURL = Astro.url;
   });
 
   overlay?.addEventListener('click', closeMenu);
-  navLinksEl?.querySelectorAll('.nav-link').forEach((link) => {
-    link.addEventListener('click', closeMenu);
+  sidebar?.querySelectorAll('.nav-link').forEach((link) => {
+    link.addEventListener('click', () => { if (isMobile()) closeMenu(); });
+  });
+  // Close sidebar when CTA links clicked on mobile
+  sidebar?.querySelectorAll('a[href^="#"]').forEach((link) => {
+    link.addEventListener('click', () => { if (isMobile()) closeMenu(); });
   });
 
   // ── Custom Context Menu ───────────────────────────────────────────────────
@@ -295,36 +376,54 @@ const canonicalURL = Astro.url;
     }
   });
 
-  // ── Scroll Reveal ─────────────────────────────────────────────────────────
-  const scrollRevealObs = new IntersectionObserver((entries) => {
+  // ── Section Fade In / Fade Out + Stagger Children ────────────────────────
+  const revealSections = document.querySelectorAll<HTMLElement>('section:not(#hero)');
+
+  // Setup: add section-reveal class + stagger delays to children
+  revealSections.forEach((section) => {
+    section.classList.add('section-reveal');
+
+    // Stagger headings
+    section.querySelectorAll<HTMLElement>('.section-heading').forEach((el) => {
+      el.classList.add('stagger-child');
+      el.style.transitionDelay = '0ms';
+    });
+    section.querySelectorAll<HTMLElement>('.section-subheading').forEach((el) => {
+      el.classList.add('stagger-child');
+      el.style.transitionDelay = '80ms';
+    });
+
+    // Stagger grid/list items
+    section.querySelectorAll<HTMLElement>('[data-stagger]').forEach((grid) => {
+      Array.from(grid.children).forEach((child, i) => {
+        const el = child as HTMLElement;
+        el.classList.add('stagger-child');
+        el.style.transitionDelay = `${180 + i * 80}ms`;
+      });
+    });
+  });
+
+  // Observer: fade in on enter, fade out on exit top
+  const sectionObserver = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
-      const el = entry.target as HTMLElement;
-      if (el.hasAttribute('data-stagger')) {
-        Array.from(el.children).forEach((child) => child.classList.add('visible'));
+      const el   = entry.target as HTMLElement;
+      const fromTop = entry.boundingClientRect.top < 0;
+
+      if (entry.isIntersecting) {
+        el.classList.add('is-visible');
+        el.classList.remove('is-exit');
+      } else if (fromTop) {
+        // Section scrolled past (leaving from top)
+        el.classList.add('is-exit');
+        el.classList.remove('is-visible');
       } else {
-        el.classList.add('visible');
+        // Section not yet reached (below viewport)
+        el.classList.remove('is-visible', 'is-exit');
       }
-      scrollRevealObs.unobserve(el);
     });
-  }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+  }, { threshold: 0.08 });
 
-  // Section headings
-  document.querySelectorAll<HTMLElement>('.section-heading, .section-subheading').forEach((el) => {
-    el.classList.add('will-reveal');
-    if (el.classList.contains('section-subheading')) el.style.transitionDelay = '80ms';
-    scrollRevealObs.observe(el);
-  });
-
-  // Stagger grids
-  document.querySelectorAll<HTMLElement>('[data-stagger]').forEach((grid) => {
-    Array.from(grid.children).forEach((child, i) => {
-      const el = child as HTMLElement;
-      el.classList.add('will-reveal');
-      el.style.transitionDelay = `${i * 90}ms`;
-    });
-    scrollRevealObs.observe(grid);
-  });
+  revealSections.forEach((s) => sectionObserver.observe(s));
 
   // ── Back to Top ───────────────────────────────────────────────────────────
   const backToTop = document.getElementById('back-to-top') as HTMLButtonElement | null;

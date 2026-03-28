@@ -60,7 +60,7 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto; /* handled by JS lerp smooth scroll */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -304,6 +304,9 @@ body {
 /* ─── Section Layout ─────────────────────────────────────────────────────── */
 .section {
   padding: 4rem 0;
+  position: relative;
+  z-index: 2; /* slide over sticky hero */
+  background: var(--color-base);
 }
 .section-bg-void { background: var(--color-void); }
 .link-disabled   { opacity: 0.4; cursor: default; }
@@ -408,23 +411,175 @@ body {
   user-select: none;
 }
 
-/* ─── Navbar ─────────────────────────────────────────────────────────────── */
-.navbar {
+/* ─── Sidebar ────────────────────────────────────────────────────────────── */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 100vh;
+  z-index: 100;
+  background: rgba(12, 12, 15, 0.95);
+  backdrop-filter: blur(12px);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1.5rem;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  flex-shrink: 0;
+}
+
+.sidebar-ctas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+.sidebar-ctas .btn {
+  justify-content: center;
+  font-size: 0.78rem;
+  padding: 8px 14px;
+}
+
+.sidebar-footer {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+/* ─── Sidebar Profile Card ───────────────────────────────────────────────── */
+.sidebar-profile {
+  margin-top: 1.75rem;
+  padding: 1rem;
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.3rem;
+}
+
+.sidebar-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid var(--color-primary);
+  box-shadow: 0 0 10px rgba(0, 255, 135, 0.20);
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-bottom: 0.25rem;
+}
+.sidebar-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sidebar-profile-name {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-fg);
+}
+
+.sidebar-profile-role {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-primary);
+}
+
+.sidebar-profile-location {
+  font-size: 0.68rem;
+  color: var(--color-fg-dim);
+  margin-top: 0.1rem;
+}
+
+.sidebar-status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--color-fg-muted);
+}
+.sidebar-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 6px rgba(0, 255, 135, 0.60);
+  animation: greenPulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* ─── Sidebar Theme Picker ───────────────────────────────────────────────── */
+.sidebar-theme {
+  margin-top: 1.5rem;
+  padding: 0.875rem;
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+/* ─── Sidebar Social Icons ───────────────────────────────────────────────── */
+.sidebar-socials {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+.sidebar-social-icon {
+  display: flex;
+  align-items: center;
+  opacity: 0.55;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+.sidebar-social-icon:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+.sidebar-social-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sidebar-credit {
+  color: var(--color-fg-dim);
+  font-size: 0.65rem;
+}
+
+/* ─── Mobile Top Bar ─────────────────────────────────────────────────────── */
+.mobile-topbar {
+  display: none;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 100;
-  background: rgba(12, 12, 15, 0.85);
+  height: 48px;
+  z-index: 101;
+  background: rgba(12, 12, 15, 0.95);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-border);
-  padding: 0 1.5rem;
-  height: 56px;
-  display: flex;
+  padding: 0 1.25rem;
   align-items: center;
   justify-content: space-between;
 }
 
+/* ─── Page Wrapper ───────────────────────────────────────────────────────── */
+.page-wrapper {
+  margin-left: 240px;
+}
+
+/* ─── Nav Logo ───────────────────────────────────────────────────────────── */
 .nav-logo {
   display: flex;
   align-items: center;
@@ -447,20 +602,27 @@ body {
   transition: background-color 0.3s;
 }
 
+/* ─── Nav Links (vertical in sidebar) ───────────────────────────────────── */
 .nav-links {
   display: flex;
-  align-items: center;
-  gap: 1.5rem;
+  flex-direction: column;
+  gap: 0.25rem;
   list-style: none;
 }
 .nav-link {
+  display: block;
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--color-fg-muted);
   text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
   transition: var(--transition);
 }
-.nav-link:hover { color: var(--color-primary); }
+.nav-link:hover {
+  color: var(--color-primary);
+  background: rgba(0, 255, 135, 0.06);
+}
 
 /* ─── Phosphor Text Glow on Primary Elements ─────────────────────────────── */
 .phosphor {
@@ -472,7 +634,7 @@ body {
 #scroll-progress {
   position: fixed;
   top: 0;
-  left: 0;
+  left: 240px;
   height: 2px;
   width: 0%;
   z-index: 200;
@@ -480,10 +642,14 @@ body {
   transition: width 0.1s linear;
   pointer-events: none;
 }
+@media (max-width: 1023px) {
+  #scroll-progress { left: 0; }
+}
 
 /* ─── Active Nav Link (scroll-spy) ──────────────────────────────────────── */
 .nav-link.active {
   color: var(--color-primary);
+  background: rgba(0, 255, 135, 0.08);
   text-shadow: 0 0 8px rgba(0, 255, 135, 0.40);
 }
 
@@ -521,28 +687,27 @@ body {
   background: var(--color-primary);
 }
 
-/* ─── Mobile Nav ─────────────────────────────────────────────────────────── */
-@media (max-width: 639px) {
-  .hamburger { display: flex; }
-  .nav-links {
-    position: fixed;
-    top: 56px;
-    right: 0;
-    width: 220px;
-    height: calc(100vh - 56px);
-    background: rgba(17, 17, 22, 0.98);
-    backdrop-filter: blur(16px);
-    border-left: 1px solid var(--color-border);
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 1.5rem;
-    gap: 1.25rem;
-    transform: translateX(100%);
+/* ─── Mobile: show topbar, hide sidebar, push content down ──────────────── */
+@media (max-width: 1023px) {
+  .mobile-topbar { display: flex; }
+  .hamburger     { display: flex; }
+  .page-wrapper  { margin-left: 0; padding-top: 48px; }
+
+  .sidebar {
+    width: 240px;
+    transform: translateX(-100%);
     transition: transform 0.25s ease-out;
-    z-index: 99;
+    border-right: 1px solid var(--color-border);
+    top: 0;
   }
-  .nav-links.open { transform: translateX(0); }
-  .nav-link { font-size: 0.9rem; }
+  .sidebar.open { transform: translateX(0); }
+}
+
+/* ─── Desktop: show sidebar, hide topbar/hamburger ───────────────────────── */
+@media (min-width: 1024px) {
+  .mobile-topbar { display: none; }
+  .hamburger     { display: none; }
+  .sidebar       { transform: translateX(0); }
 }
 
 .mobile-overlay {
@@ -748,7 +913,7 @@ body {
 }
 #cursor-ring.active { opacity: 1; }
 
-/* ─── Scroll Reveal ─────────────────────────────────────────────────────── */
+/* ─── Scroll Reveal (legacy, kept for non-section elements) ─────────────── */
 .will-reveal {
   opacity: 0;
   transform: translateY(18px);
@@ -759,9 +924,32 @@ body {
   transform: translateY(0);
 }
 
+/* ─── Section Reveal (wrapper, no animation — only triggers children) ────── */
+.section-reveal {
+  /* intentionally no opacity/transform — section background stays visible */
+}
+
+/* ─── Stagger Children ───────────────────────────────────────────────────── */
+.stagger-child {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+.section-reveal.is-visible .stagger-child {
+  opacity: 1;
+  transform: translateY(0);
+}
+.section-reveal.is-exit .stagger-child {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
 /* ─── prefers-reduced-motion ─────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .will-reveal {
+  .will-reveal,
+  .section-reveal,
+  .stagger-child {
     opacity: 1;
     transform: none;
     transition: none;
