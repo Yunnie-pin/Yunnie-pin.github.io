@@ -327,8 +327,9 @@ import { about } from '../data/about';
 
   if (!bootBtn || !terminal || !output || !input) throw new Error();
 
-  let isOpen   = false;
-  let isTyping = false;
+  let isOpen       = false;
+  let isTyping     = false;
+  let popupFromTab = false;
   const history: string[] = [];
   let histIdx = -1;
 
@@ -542,6 +543,63 @@ import { about } from '../data/about';
     bootBtn!.classList.remove('active');
   }
 
+  async function openTerminalAsPopup() {
+    // Already open as popup — do nothing
+    if (isOpen && terminal.classList.contains('ht-popup-mode')) return;
+
+    // Already open in hero — just portal it to popup
+    if (isOpen) { openHtPopup(); return; }
+
+    // Not open yet — open directly as popup (no hero scroll needed)
+    isOpen = true;
+    output!.innerHTML = '';
+
+    // Hide floating badges in hero
+    rightCol?.classList.add('terminal-open');
+    logoEl?.classList.add('logo-hidden');
+    popupFromTab = true;
+
+    // Portal terminal to body immediately
+    htPortalParent = terminal.parentElement;
+    htPortalNextSibling = terminal.nextElementSibling;
+    document.body.appendChild(terminal);
+
+    htPopupOverlay = document.createElement('div');
+    htPopupOverlay.style.cssText = `
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 999;
+      opacity: 0;
+      transition: opacity 0.2s ease-out;
+    `;
+    document.body.appendChild(htPopupOverlay);
+    requestAnimationFrame(() => { htPopupOverlay!.style.opacity = '1'; });
+    terminal.classList.add('ht-popup-mode', 'open');
+    htPopupOverlay.addEventListener('click', closeHtPopup);
+    document.addEventListener('keydown', htEscHandler);
+
+    bootBtn!.setAttribute('aria-expanded', 'true');
+    bootBtn!.classList.add('active');
+
+    await new Promise(r => setTimeout(r, 280));
+    isTyping = true;
+    await printLines([
+      '',
+      `  <span class="tc-green">┌──────────────────────────────┐</span>`,
+      `  <span class="tc-green">│</span>  yunnie-pin@127.0.0.1  <span class="tc-green">│</span>`,
+      `  <span class="tc-green">└──────────────────────────────┘</span>`,
+      '',
+      `  <span class="tc-dim">Last login:</span> ${new Date().toDateString()}`,
+      '',
+      `  Type <span class="tc-cyan">help</span> to see available commands.`,
+      '',
+    ], 28);
+    isTyping = false;
+    input!.focus();
+  }
+
   // ── Events ──────────────────────────────────────────────────────────────────
   bootBtn.addEventListener('click', () => isOpen ? closeTerminal() : openTerminal());
   bootBtn.addEventListener('keydown', (e) => {
@@ -599,7 +657,11 @@ import { about } from '../data/about';
     if (!terminal.classList.contains('ht-popup-mode')) return;
     terminal.classList.add('ht-popup-closing');
     if (htPopupOverlay) htPopupOverlay.style.opacity = '0';
-    terminal.addEventListener('animationend', () => {
+
+    let cleaned = false;
+    function doCleanup() {
+      if (cleaned) return;
+      cleaned = true;
       terminal.classList.remove('ht-popup-mode', 'ht-popup-closing');
       htPopupOverlay?.remove();
       htPopupOverlay = null;
@@ -610,7 +672,15 @@ import { about } from '../data/about';
         htPortalNextSibling = null;
       }
       document.removeEventListener('keydown', htEscHandler);
-    }, { once: true });
+      // If popup was opened from a section tab, fully close terminal + restore hero
+      if (popupFromTab) {
+        popupFromTab = false;
+        closeTerminal();
+      }
+    }
+
+    terminal.addEventListener('animationend', doCleanup, { once: true });
+    setTimeout(doCleanup, 300); // fallback: ensures cleanup runs even if animationend doesn't fire
   }
 
   function htEscHandler(e: KeyboardEvent) {
@@ -762,6 +832,17 @@ import { about } from '../data/about';
     if (isDragging) moveDrag(e.touches[0].clientX, e.touches[0].clientY);
   }, { passive: true });
   window.addEventListener('touchend', () => endDrag());
+
+  // ── Section tab header → open terminal as popup with "open [section]" ───────
+  document.querySelectorAll<HTMLElement>('.section-tab-label[data-section]').forEach(el => {
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', async () => {
+      const section = el.dataset.section!;
+      await openTerminalAsPopup();
+      await runCmd(`open ${section}`);
+      input!.value = '';
+    });
+  });
 </script>
 
 <style>

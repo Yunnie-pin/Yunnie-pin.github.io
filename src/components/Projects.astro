@@ -24,8 +24,9 @@ const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
   <div class="container">
 
     <!-- Heading -->
-    <p class="ascii-divider"><!-- ─────────────────────────────── --></p>
-    <h2 class="section-heading glitch" data-text="// projects">// projects</h2>
+    <h2 class="section-tab-header">
+      <span class="section-tab-label glitch" data-text="[•] projects" data-section="projects">[•] projects</span>
+    </h2>
     <p class="section-subheading">These are some of the projects I've worked on</p>
 
     <!-- Filter bar (hidden when no projects) -->

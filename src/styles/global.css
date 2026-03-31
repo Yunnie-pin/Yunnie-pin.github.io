@@ -410,10 +410,19 @@ body {
   100% { transform: translate(0,     0);    filter: none; }
 }
 .section-subheading {
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
   color: var(--color-fg-muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   margin-bottom: 2.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.section-subheading::before {
+  content: '>';
+  color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 /* ─── Divider ────────────────────────────────────────────────────────────── */
@@ -423,6 +432,42 @@ body {
   font-size: 0.7rem;
   letter-spacing: 2px;
   user-select: none;
+}
+
+/* ─── Section Tab Header ─────────────────────────────────────────────────── */
+.section-tab-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  user-select: none;
+}
+
+.section-tab-header::before,
+.section-tab-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border-bright);
+}
+
+.section-tab-label {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--color-primary);
+  border: 1px solid var(--color-border-bright);
+  padding: 3px 12px;
+  background: var(--color-panel);
+  box-shadow: var(--glow-sm);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.section-tab-label.glitch::before,
+.section-tab-label.glitch::after {
+  padding: 3px 12px;
+  background: var(--color-panel);
 }
 
 /* ─── Sidebar ────────────────────────────────────────────────────────────── */
