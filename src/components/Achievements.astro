@@ -1,0 +1,567 @@
+---
+import TerminalCard from './ui/TerminalCard.astro';
+import Badge from './ui/Badge.astro';
+import TerminalPrompt from './ui/TerminalPrompt.astro';
+import { achievements } from '../data/achievements';
+import type { AchievementRank, AchievementCategory } from '../data/achievements';
+
+const rankLabel: Record<AchievementRank, string> = {
+  '1st': '1ST',
+  '2nd': '2ND',
+  '3rd': '3RD',
+  'hon': 'HON',
+};
+
+const rankVariant: Record<AchievementRank, 'primary' | 'cyan' | 'default'> = {
+  '1st': 'primary',
+  '2nd': 'cyan',
+  '3rd': 'default',
+  'hon': 'default',
+};
+
+const categoryVariant: Record<AchievementCategory, 'primary' | 'cyan' | 'default'> = {
+  hackathon: 'cyan',
+  competition: 'default',
+  award: 'default',
+};
+
+const INITIAL_COUNT = 3;
+
+// Summary stats
+const categories = ['hackathon', 'competition', 'award'] as AchievementCategory[];
+const counts = Object.fromEntries(
+  categories.map((c) => [c, achievements.filter((a) => a.category === c).length])
+) as Record<AchievementCategory, number>;
+---
+
+<section id="achievements" class="section section-bg-void">
+  <div class="container">
+
+    <h2 class="section-tab-header">
+      <span class="section-tab-label glitch" data-text="[•] achievements" data-section="achievements">[•] achievements</span>
+    </h2>
+    <p class="section-subheading">
+      Competitions, hackathons, and recognitions I've earned along the way.
+    </p>
+
+    <!-- Summary stats -->
+    <p class="ach-summary font-mono">
+      // {achievements.length} total
+      {categories.map((c) => counts[c] > 0 && (
+        <span>· {counts[c]} {c}{counts[c] > 1 ? 's' : ''}</span>
+      ))}
+    </p>
+
+    <!-- Filter tabs -->
+    <div class="ach-filters" role="tablist" aria-label="Filter achievements by category">
+      <button class="ach-filter-btn active font-mono" data-filter="all" role="tab" aria-selected="true">[all]</button>
+      {categories.map((c) => counts[c] > 0 && (
+        <button class="ach-filter-btn font-mono" data-filter={c} role="tab" aria-selected="false">[{c}]</button>
+      ))}
+    </div>
+
+    <!-- Cards grid -->
+    <div class="ach-grid" id="ach-grid">
+      {achievements.map((ach, i) => (
+        <div class="ach-item" data-category={ach.category} data-rank={ach.rank} data-more={i >= INITIAL_COUNT ? '' : undefined}>
+          <TerminalCard
+            title={`~/achievements/${ach.slug}`}
+            class="ach-card"
+            data-rank={ach.rank}
+          >
+            <div class="ach-body">
+
+              <!-- Badges row -->
+              <div class="ach-badges">
+                <Badge variant={rankVariant[ach.rank]}>[{rankLabel[ach.rank]}]</Badge>
+                <Badge variant={categoryVariant[ach.category]}>[{ach.category}]</Badge>
+              </div>
+
+              <!-- Title -->
+              <h3 class="ach-title font-mono">{ach.title}</h3>
+
+              <!-- Meta -->
+              <p class="ach-meta font-mono">
+                <span style="color: var(--color-primary);">@</span>
+                <span>{ach.issuer}</span>
+                <span class="ach-sep">·</span>
+                <span>{ach.date}</span>
+                {ach.role && (
+                  <>
+                    <span class="ach-sep">·</span>
+                    <span class="ach-role">{ach.role}</span>
+                  </>
+                )}
+              </p>
+
+              <!-- Divider -->
+              <div class="ach-divider"></div>
+
+              <!-- Description -->
+              <p class="ach-desc">
+                <span class="ach-arrow">▸</span>
+                {ach.description}
+              </p>
+
+              <!-- No proof indicator -->
+              {(!ach.images || ach.images.length === 0) && !ach.link && (
+                <p class="ach-no-proof font-mono">// no proof attached</p>
+              )}
+
+              <!-- External link -->
+              {ach.link && (
+                <a class="ach-link font-mono" href={ach.link} target="_blank" rel="noopener noreferrer">
+                  <span>↗</span>
+                  <span>view certificate</span>
+                </a>
+              )}
+
+              <!-- Proof toggle button -->
+              {ach.images && ach.images.length > 0 && (
+                <button class="ach-proof-btn font-mono" data-proof-toggle>
+                  <span class="proof-icon">▸</span>
+                  <span class="proof-label">view proof</span>
+                  <span class="proof-count">({ach.images.length})</span>
+                </button>
+              )}
+
+              <!-- Proof expand area -->
+              {ach.images && ach.images.length > 0 && (
+                <div class="ach-proof-wrap" data-proof-content aria-hidden="true">
+                  <div class="ach-proof-inner">
+                    <TerminalPrompt command="ls -la ./proof/" style="margin-bottom: 0.75rem;" />
+                    <div class={`ach-images${ach.images.length >= 2 ? ' ach-images-grid' : ''}`}>
+                      {ach.images.map((src, idx) => (
+                        <img
+                          src={src}
+                          alt={`${ach.title} — proof ${idx + 1}`}
+                          class="ach-img"
+                          loading="lazy"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </TerminalCard>
+        </div>
+      ))}
+    </div>
+
+    <!-- Load more -->
+    {achievements.length > INITIAL_COUNT && (
+      <div class="ach-load-more-wrap" id="ach-load-more-wrap">
+        <button class="ach-load-more font-mono" id="ach-load-more">
+          <span class="lm-icon">▸</span>
+          <span class="lm-label">load more</span>
+          <span class="lm-count">({achievements.length - INITIAL_COUNT} remaining)</span>
+        </button>
+      </div>
+    )}
+
+  </div>
+</section>
+
+<script>
+  // ── Filter tabs ──────────────────────────────────────────────────────────
+  const filterBtns    = document.querySelectorAll<HTMLElement>('[data-filter]');
+  const achItems      = document.querySelectorAll<HTMLElement>('.ach-item');
+  const loadMoreWrap  = document.getElementById('ach-load-more-wrap');
+  let expanded        = false;
+
+  function applyVisibility(filter: string) {
+    achItems.forEach((item) => {
+      const categoryMatch = filter === 'all' || item.dataset.category === filter;
+      const isMore        = item.hasAttribute('data-more');
+      const show = categoryMatch && (filter !== 'all' || !isMore || expanded);
+      item.style.display = show ? 'flex' : 'none';
+    });
+
+    // Hide load-more button when a specific filter is active or already expanded
+    if (loadMoreWrap) {
+      loadMoreWrap.style.display = (filter === 'all' && !expanded) ? '' : 'none';
+    }
+  }
+
+  filterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const filter = btn.dataset.filter!;
+
+      filterBtns.forEach((b) => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+
+      applyVisibility(filter);
+    });
+  });
+
+  // ── Load more ────────────────────────────────────────────────────────────
+  const loadMoreBtn = document.getElementById('ach-load-more');
+  loadMoreBtn?.addEventListener('click', () => {
+    expanded = true;
+    const moreItems = Array.from(achItems).filter((item) => item.hasAttribute('data-more'));
+    moreItems.forEach((item, i) => {
+      item.style.display = 'flex';
+      item.style.opacity = '0';
+      item.style.transform = 'translateY(16px)';
+      const delay = i * 80;
+      requestAnimationFrame(() => {
+        item.style.transition = `opacity 0.38s ease-out ${delay}ms, transform 0.38s cubic-bezier(0.22,1,0.36,1) ${delay}ms`;
+        item.style.opacity    = '1';
+        item.style.transform  = 'translateY(0)';
+      });
+    });
+    if (loadMoreWrap) loadMoreWrap.style.display = 'none';
+  });
+
+  // ── Proof toggle ─────────────────────────────────────────────────────────
+  document.querySelectorAll<HTMLElement>('[data-proof-toggle]').forEach((btn) => {
+    const card    = btn.closest('.ach-card');
+    if (!card) return;
+    const content = card.querySelector<HTMLElement>('[data-proof-content]');
+    const icon    = btn.querySelector<HTMLElement>('.proof-icon');
+    const label   = btn.querySelector<HTMLElement>('.proof-label');
+    if (!content) return;
+
+    btn.addEventListener('click', () => {
+      const isOpen = content.getAttribute('aria-hidden') === 'false';
+
+      if (isOpen) {
+        content.style.maxHeight = content.scrollHeight + 'px';
+        requestAnimationFrame(() => { content.style.maxHeight = '0px'; });
+        content.setAttribute('aria-hidden', 'true');
+        if (icon)  icon.textContent  = '▸';
+        if (label) label.textContent = 'view proof';
+        btn.classList.remove('open');
+      } else {
+        content.setAttribute('aria-hidden', 'false');
+        content.style.maxHeight = '0px';
+        requestAnimationFrame(() => { content.style.maxHeight = content.scrollHeight + 'px'; });
+        if (icon)  icon.textContent  = '▾';
+        if (label) label.textContent = 'hide proof';
+        btn.classList.add('open');
+      }
+    });
+
+    content.addEventListener('transitionend', () => {
+      if (content.getAttribute('aria-hidden') === 'false') {
+        content.style.maxHeight = 'none';
+      }
+    });
+  });
+
+  // ── Scroll-in stagger animation ──────────────────────────────────────────
+  const grid = document.getElementById('ach-grid');
+  if (grid) {
+    const items = grid.querySelectorAll<HTMLElement>('.ach-item');
+    items.forEach((item) => {
+      item.style.opacity   = '0';
+      item.style.transform = 'translateY(16px)';
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        observer.disconnect();
+        items.forEach((item, i) => {
+          const delay = i * 80;
+          item.style.transition = `opacity 0.38s ease-out ${delay}ms, transform 0.38s cubic-bezier(0.22,1,0.36,1) ${delay}ms`;
+          item.style.opacity    = '1';
+          item.style.transform  = 'translateY(0)';
+        });
+      });
+    }, { threshold: 0.1 });
+
+    observer.observe(grid);
+  }
+</script>
+
+<style>
+  /* ── Summary stats ── */
+  .ach-summary {
+    font-size: 0.72rem;
+    color: var(--color-fg-dim);
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+
+  /* ── Filter tabs ── */
+  .ach-filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+
+  .ach-filter-btn {
+    font-size: 0.72rem;
+    padding: 3px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-fg-dim);
+    cursor: pointer;
+    transition: color 0.15s ease-out, border-color 0.15s ease-out, background 0.15s ease-out;
+  }
+
+  .ach-filter-btn:hover {
+    color: var(--color-fg-muted);
+    border-color: var(--color-border-bright);
+  }
+
+  .ach-filter-btn.active {
+    color: var(--color-primary);
+    border-color: rgba(var(--color-primary-rgb), 0.40);
+    background: rgba(var(--color-primary-rgb), 0.06);
+  }
+
+  /* ── Grid ── */
+  .ach-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .ach-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (min-width: 1024px) {
+    .ach-grid { grid-template-columns: 1fr 1fr 1fr; }
+  }
+
+  /* ── Card wrapper (for stagger) ── */
+  .ach-item {
+    display: flex;
+  }
+
+  /* Hidden until load more */
+  .ach-item[data-more] {
+    display: none;
+  }
+
+  /* ── Load more ── */
+  .ach-load-more-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
+  }
+
+  .ach-load-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--color-fg-dim);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 6px 16px;
+    cursor: pointer;
+    transition: color 0.15s ease-out, border-color 0.15s ease-out, background 0.15s ease-out;
+  }
+
+  .ach-load-more:hover {
+    color: var(--color-primary);
+    border-color: rgba(var(--color-primary-rgb), 0.40);
+    background: rgba(var(--color-primary-rgb), 0.05);
+  }
+
+  .lm-icon {
+    font-size: 0.65rem;
+    transition: transform 0.2s ease-out;
+  }
+
+  .ach-load-more:hover .lm-icon {
+    transform: translateX(2px);
+  }
+
+  .lm-count {
+    color: var(--color-fg-dim);
+    font-size: 0.68rem;
+  }
+
+  .ach-card {
+    width: 100%;
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  }
+
+  .ach-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(var(--color-primary-rgb), 0.10);
+  }
+
+  /* ── Card body ── */
+  .ach-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .ach-badges {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .ach-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-fg);
+    line-height: 1.5;
+  }
+
+  .ach-meta {
+    font-size: 0.72rem;
+    color: var(--color-fg-muted);
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .ach-sep { color: var(--color-fg-dim); }
+
+  .ach-role { color: var(--color-cyan); }
+
+  .ach-divider {
+    height: 1px;
+    background: var(--color-border);
+  }
+
+  .ach-desc {
+    font-size: 0.8rem;
+    color: var(--color-fg-muted);
+    line-height: 1.65;
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .ach-arrow {
+    color: var(--color-primary);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .ach-no-proof {
+    font-size: 0.68rem;
+    color: var(--color-fg-dim);
+    margin-top: 0.1rem;
+  }
+
+  /* ── External link ── */
+  .ach-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    color: var(--color-fg-dim);
+    text-decoration: none;
+    margin-top: 0.1rem;
+    transition: color 0.15s ease-out;
+  }
+
+  .ach-link:hover {
+    color: var(--color-primary);
+  }
+
+  /* ── Proof button ── */
+  .ach-proof-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.1rem;
+    font-size: 0.72rem;
+    color: var(--color-fg-dim);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s ease-out;
+  }
+
+  .ach-proof-btn:hover,
+  .ach-proof-btn.open {
+    color: var(--color-primary);
+  }
+
+  .proof-icon {
+    font-size: 0.65rem;
+    display: inline-block;
+    transition: transform 0.2s ease-out;
+  }
+
+  .ach-proof-btn.open .proof-icon {
+    transform: rotate(90deg);
+  }
+
+  .proof-count {
+    color: var(--color-fg-dim);
+    font-size: 0.68rem;
+  }
+
+  /* ── Proof expand area ── */
+  .ach-proof-wrap {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .ach-proof-inner {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border);
+    margin-top: 0.25rem;
+  }
+
+  /* Single image: stacked */
+  .ach-images {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* 2+ images: 2-col grid */
+  .ach-images.ach-images-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .ach-img {
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    display: block;
+    transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out;
+  }
+
+  .ach-img:hover {
+    border-color: var(--color-border-bright);
+    box-shadow: var(--glow-sm);
+  }
+</style>
+
+<style is:global>
+  .ach-item[data-rank='1st'] .terminal-card {
+    border-top: 2px solid var(--color-primary);
+    box-shadow: 0 -1px 8px rgba(var(--color-primary-rgb), 0.25);
+  }
+  .ach-item[data-rank='2nd'] .terminal-card {
+    border-top: 2px solid var(--color-cyan);
+    box-shadow: 0 -1px 8px rgba(0, 200, 240, 0.20);
+  }
+  .ach-item[data-rank='3rd'] .terminal-card {
+    border-top: 2px solid var(--color-yellow);
+    box-shadow: 0 -1px 8px rgba(255, 184, 108, 0.18);
+  }
+  .ach-item[data-rank='hon'] .terminal-card {
+    border-top: 2px solid var(--color-fg-dim);
+  }
+</style>

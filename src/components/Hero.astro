@@ -3,6 +3,11 @@ import Cursor from './decorative/Cursor.astro';
 import CmdButton from './ui/CmdButton.astro';
 import { typewriterRoles } from '../data/profile';
 import { about } from '../data/about';
+import { achievements } from '../data/achievements';
+import { projects } from '../data/projects';
+
+const _achData = achievements.map(a => ({ title: a.title, issuer: a.issuer, date: a.date, rank: a.rank }));
+const _prjData = projects.map(p => ({ title: p.title, tech: p.tech, status: p.status }));
 ---
 
 <section id="hero" class="hero-section bg-grid-dots">
@@ -29,7 +34,7 @@ import { about } from '../data/about';
            aria-expanded="false" aria-controls="hero-terminal">
           <span class="boot-prefix">$</span>
           <span class="boot-cmd"> whoami</span>
-          <span class="boot-hint" id="boot-hint">[click to open terminal]</span>
+          <span class="boot-hint" id="boot-hint"><span id="boot-hint-text"></span><span class="boot-cursor" id="boot-cursor" aria-hidden="true">▋</span></span>
         </p>
 
         <!-- Name -->
@@ -50,10 +55,10 @@ import { about } from '../data/about';
 
         <!-- Buttons -->
         <div class="hero-actions animate-fade-up animation-delay-300">
-          <CmdButton href="#projects" variant="primary" prefix="$">
+          <!-- <CmdButton href="#projects" variant="primary" prefix="$">
             view projects
-          </CmdButton>
-          <CmdButton href="#contact" variant="outline" prefix="$">
+          </CmdButton> -->
+          <CmdButton href="#contact" variant="primary" prefix="$">
             contact me
           </CmdButton>
           <CmdButton href="/assets/cv.pdf" variant="outline" prefix="↓" target="_blank">
@@ -110,13 +115,25 @@ import { about } from '../data/about';
 
 <!-- Boot hint attention pulse + scroll cue -->
 <script>
-  // Attention pulse on boot hint — fires once after fade-in animation completes
-  const bootHint = document.getElementById('boot-hint');
-  if (bootHint) {
-    setTimeout(() => {
-      bootHint.classList.add('attention');
-      bootHint.addEventListener('animationend', () => bootHint.classList.remove('attention'), { once: true });
-    }, 1200); // after the boot-line fadeUp (75ms delay + 500ms anim + buffer)
+  // Typewriter reveal for boot hint
+  const bootHintText   = document.getElementById('boot-hint-text');
+  const bootCursorEl   = document.getElementById('boot-cursor');
+
+  if (bootHintText && bootCursorEl) {
+    const FULL_TEXT  = '[click to open terminal]';
+    const CHAR_DELAY = 42; // ms per character
+    const START_DELAY = 900; // after fade-in completes
+
+    async function typeHint() {
+      bootCursorEl.classList.add('boot-cursor-blink'); // start blink while typing
+      for (let i = 0; i <= FULL_TEXT.length; i++) {
+        bootHintText.textContent = FULL_TEXT.slice(0, i);
+        await new Promise(r => setTimeout(r, CHAR_DELAY));
+      }
+      // typing done — cursor keeps blinking
+    }
+
+    setTimeout(typeHint, START_DELAY);
   }
 
   // Scroll cue — hide on first scroll
@@ -314,6 +331,12 @@ import { about } from '../data/about';
   }
 </script>
 
+<!-- Inject data for terminal commands -->
+<script is:inline define:vars={{ _achData, _prjData }}>
+  window.__ach = _achData;
+  window.__prj = _prjData;
+</script>
+
 <!-- Interactive terminal logic -->
 <script>
   // ── DOM refs ────────────────────────────────────────────────────────────────
@@ -329,93 +352,12 @@ import { about } from '../data/about';
 
   let isOpen       = false;
   let isTyping     = false;
+  let abortTyping  = false;
   let popupFromTab = false;
   const history: string[] = [];
   let histIdx = -1;
 
-  // ── Commands ────────────────────────────────────────────────────────────────
-  type Lines = string[];
-  const COMMANDS: Record<string, () => Lines> = {
-    help: () => [
-      '',
-      `  <span class="tc-green">Available commands:</span>`,
-      `  <button class="ht-cmd-btn" data-cmd="whoami">whoami</button>            — who am I`,
-      `  <button class="ht-cmd-btn" data-cmd="skills">skills</button>            — tech stack`,
-      `  <button class="ht-cmd-btn" data-cmd="experience">experience</button>    — work history`,
-      `  <button class="ht-cmd-btn" data-cmd="cat bio.txt">cat bio.txt</button>  — read my bio`,
-      `  <button class="ht-cmd-btn" data-cmd="ls">ls</button>                — list sections`,
-      `  <button class="ht-cmd-btn" data-cmd="open about">open</button> <span class="tc-dim">[section]</span>       — navigate to section`,
-      `  <button class="ht-cmd-btn" data-cmd="contact">contact</button>          — scroll to contact`,
-      `  <button class="ht-cmd-btn" data-cmd="history">history</button>          — command history`,
-      `  <button class="ht-cmd-btn" data-cmd="clear">clear</button>            — clear terminal`,
-      `  <button class="ht-cmd-btn" data-cmd="exit">exit</button>             — close terminal`,
-      `  <span class="tc-dim">// psst: try "sudo hire me"</span>`,
-      '',
-    ],
-    whoami: () => [
-      '',
-      `  <span class="tc-green">Arifin Yunianta</span>`,
-      `  Backend Developer · Indonesia`,
-      `  Go · PHP · Node.Js`,
-      `  Status: <span class="tc-green">● Available for collaboration</span>`,
-      '',
-    ],
-    skills: () => [
-      '',
-      `  <span class="tc-dim">Languages  :</span> Go, PHP, JavaScript`,
-      `  <span class="tc-dim">Frameworks :</span> Laravel, Node.Js, Flutter, React`,
-      `  <span class="tc-dim">Databases  :</span> MySQL, PostgreSQL, Clickhouse, Firebase`,
-      `  <span class="tc-dim">Tools      :</span> Git, Docker, Linux`,
-      `  <span class="tc-cyan">Learning   :</span> Go, Kubernetes, Rust`,
-      '',
-    ],
-    experience: () => [
-      '',
-      `  <span class="tc-green">Backend Developer</span> · PT. Telto Telematis Indonesia`,
-      `  <span class="tc-dim">2024 — Present · Onsite</span>`,
-      '',
-    ],
-    contact: () => {
-      setTimeout(() => document.getElementById('contact')
-        ?.scrollIntoView({ behavior: 'smooth' }), 500);
-      return ['', '  Navigating to contact…', `  <span class="tc-green">✓ Done</span>`, ''];
-    },
-    ls: () => [
-      '',
-      `  <span class="tc-green">about/</span>  <span class="tc-green">experience/</span>  <span class="tc-green">projects/</span>  <span class="tc-green">contact/</span>`,
-      '',
-    ],
-    'cat bio.txt': () => [
-      '',
-      `  Backend developer passionate about building`,
-      `  efficient, scalable, and maintainable systems.`,
-      `  I enjoy database design, API development,`,
-      `  and optimizing application performance.`,
-      '',
-    ],
-    'sudo hire me': () => [
-      '',
-      `  [sudo] password for recruiter: <span class="tc-dim">••••••••</span>`,
-      `  Verifying credentials…`,
-      `  <span class="tc-green">✓ Great taste in developers: confirmed</span>`,
-      `  Fetching package: <span class="tc-cyan">arifin-yunianta@latest</span>`,
-      `  Installing  <span class="tc-green">████████████████</span>  100%`,
-      '',
-      `  <span class="tc-green">✓ Best decision you'll make today.</span>`,
-      '',
-    ],
-    history: () => {
-      if (history.length === 0) return ['', `  <span class="tc-dim">(no history yet)</span>`, ''];
-      const lines: Lines = [''];
-      history.slice().reverse().forEach((c, i) => {
-        lines.push(`  <span class="tc-dim">${String(i + 1).padStart(3)}</span>  <span class="tc-fg">${escHtml(c)}</span>`);
-      });
-      lines.push('');
-      return lines;
-    },
-    clear: () => [],
-    exit:  () => [],
-  };
+  const VALID_SECTIONS = ['about', 'experience', 'achievements', 'projects', 'contact'];
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
   function addLine(html: string) {
@@ -434,17 +376,236 @@ import { about } from '../data/about';
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  async function printLines(lines: string[], delay = 40) {
+  async function printLines(lines: string[], delay = 32) {
     for (const l of lines) {
+      if (abortTyping) break;
       addLine(l);
       output!.scrollTop = output!.scrollHeight;
       await new Promise(r => setTimeout(r, delay));
     }
   }
 
+  async function animateProgress(label: string, steps = 20, stepMs = 60): Promise<void> {
+    const div = document.createElement('div');
+    div.className = 'ht-line';
+    output!.appendChild(div);
+    output!.scrollTop = output!.scrollHeight;
+    for (let i = 0; i <= steps; i++) {
+      if (abortTyping) break;
+      const filled = '█'.repeat(i);
+      const empty  = '░'.repeat(steps - i);
+      const pct    = Math.round((i / steps) * 100);
+      div.innerHTML = `  ${label} <span class="tc-green">${filled}</span><span class="tc-dim">${empty}</span>  ${pct}%`;
+      output!.scrollTop = output!.scrollHeight;
+      await new Promise(r => setTimeout(r, stepMs));
+    }
+  }
+
+  // ── Commands ────────────────────────────────────────────────────────────────
+  type Lines = string[];
+  type CmdFn = () => Lines | Promise<Lines | void>;
+  const COMMANDS: Record<string, CmdFn> = {
+    help: () => [
+      '',
+      `  <span class="tc-green">Available commands:</span>`,
+      `  <button class="ht-cmd-btn" data-cmd="whoami">whoami</button>           — who am I`,
+      `  <button class="ht-cmd-btn" data-cmd="skills">skills</button>           — tech stack`,
+      `  <button class="ht-cmd-btn" data-cmd="experience">experience</button>   — work history`,
+      `  <button class="ht-cmd-btn" data-cmd="achievements">achievements</button> — awards & competitions`,
+      `  <button class="ht-cmd-btn" data-cmd="projects">projects</button>       — project list`,
+      `  <button class="ht-cmd-btn" data-cmd="cat bio.txt">cat bio.txt</button> — read my bio`,
+      `  <button class="ht-cmd-btn" data-cmd="ls">ls</button>               — list sections`,
+      `  <button class="ht-cmd-btn" data-cmd="pwd">pwd</button>              — current path`,
+      `  <button class="ht-cmd-btn" data-cmd="date">date</button>             — current date/time`,
+      `  <button class="ht-cmd-btn" data-cmd="uname -a">uname -a</button>      — system info`,
+      `  <button class="ht-cmd-btn" data-cmd="open about">open</button> <span class="tc-dim">[section]</span>      — navigate to section`,
+      `  <button class="ht-cmd-btn" data-cmd="contact">contact</button>         — scroll to contact`,
+      `  <button class="ht-cmd-btn" data-cmd="cat cv.pdf">cat cv.pdf</button>   — download CV`,
+      `  <button class="ht-cmd-btn" data-cmd="history">history</button>         — command history`,
+      `  <button class="ht-cmd-btn" data-cmd="clear">clear</button>           — clear terminal  <span class="tc-dim">(Ctrl+L)</span>`,
+      `  <button class="ht-cmd-btn" data-cmd="exit">exit</button>            — close terminal`,
+      `  <span class="tc-dim">// psst: try "sudo hire me"</span>`,
+      '',
+    ],
+    whoami: () => [
+      '',
+      `  <span class="tc-green">Arifin Yunianta</span>`,
+      `  <span class="tc-dim">role      :</span> Backend Developer`,
+      `  <span class="tc-dim">location  :</span> Indonesia`,
+      `  <span class="tc-dim">stack     :</span> Go · PHP · Node.js`,
+      `  <span class="tc-dim">status    :</span> <span class="tc-green">● Available for collaboration</span>`,
+      '',
+    ],
+    skills: () => [
+      '',
+      `  <span class="tc-dim">Languages  :</span> <span class="tc-green">Go</span>, <span class="tc-cyan">PHP</span>, JavaScript`,
+      `  <span class="tc-dim">Frameworks :</span> Laravel, Node.js, Flutter, React`,
+      `  <span class="tc-dim">Databases  :</span> MySQL, PostgreSQL, Clickhouse, Firebase`,
+      `  <span class="tc-dim">Tools      :</span> Git, Docker, Linux`,
+      `  <span class="tc-cyan">Learning   :</span> Kubernetes, Rust`,
+      '',
+    ],
+    experience: () => [
+      '',
+      `  <span class="tc-green">Backend Developer</span>`,
+      `  <span class="tc-dim">@</span> PT. Telto Telematis Indonesia`,
+      `  <span class="tc-dim">2024 — Present · Onsite</span>`,
+      '',
+    ],
+    achievements: () => {
+      const rankSym:   Record<string, string> = { '1st': '🥇', '2nd': '🥈', '3rd': '🥉', 'hon': '★' };
+      const rankClass: Record<string, string> = { '1st': 'tc-green', '2nd': 'tc-cyan', '3rd': 'tc-yellow', 'hon': 'tc-dim' };
+      const data = ((window as any).__ach ?? []) as Array<{ title: string; issuer: string; date: string; rank: string }>;
+      if (!data.length) return ['', `  <span class="tc-dim">(no achievements data)</span>`, ''];
+      const lines: Lines = [''];
+      data.forEach(a => {
+        const sym = rankSym[a.rank] ?? '·';
+        const cls = rankClass[a.rank] ?? 'tc-dim';
+        lines.push(`  ${sym}  <span class="${cls}">${a.title}</span>`);
+        lines.push(`      <span class="tc-dim">@ ${a.issuer} · ${a.date}</span>`);
+        lines.push('');
+      });
+      lines.push(`  <button class="ht-cmd-btn" data-cmd="open achievements">→ open achievements section</button>`);
+      lines.push('');
+      return lines;
+    },
+    projects: () => {
+      const data = ((window as any).__prj ?? []) as Array<{ title: string; tech: string[]; status: string }>;
+      if (!data.length) return ['', `  <span class="tc-dim">// no projects yet — coming soon</span>`, `  <button class="ht-cmd-btn" data-cmd="open projects">→ open projects section</button>`, ''];
+      const statusCol: Record<string, string> = { live: 'tc-green', wip: 'tc-cyan', archived: 'tc-dim' };
+      const lines: Lines = [''];
+      data.forEach(p => {
+        const col = statusCol[p.status] ?? 'tc-dim';
+        lines.push(`  <span class="tc-fg">${p.title}</span>  <span class="${col}">[${p.status}]</span>`);
+        lines.push(`  <span class="tc-dim">  ${p.tech.join(' · ')}</span>`);
+        lines.push('');
+      });
+      lines.push(`  <button class="ht-cmd-btn" data-cmd="open projects">→ open projects section</button>`);
+      lines.push('');
+      return lines;
+    },
+    pwd: () => ['', `  <span class="tc-green">/home/yunnie-pin/portfolio/yunnie-pin.github.io</span>`, ''],
+    date: () => {
+      const now = new Date();
+      const opts: Intl.DateTimeFormatOptions = { timeZone: 'Asia/Jakarta', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+      return ['', `  <span class="tc-cyan">${now.toLocaleString('en-GB', opts)} WIB</span>`, ''];
+    },
+    'uname -a': () => [
+      '',
+      `  <span class="tc-green">Portfolio-OS</span> yunnie-pin 5.0.0-arifin <span class="tc-dim">#1 SMP</span>`,
+      `  <span class="tc-dim">Kernel  :</span> Astro v5 + Tailwind v4`,
+      `  <span class="tc-dim">Arch    :</span> x86_64 (brain-powered)`,
+      `  <span class="tc-dim">Shell   :</span> /bin/portfolio`,
+      `  <span class="tc-dim">Uptime  :</span> 3+ years coding`,
+      '',
+    ],
+    'cat cv.pdf': () => {
+      setTimeout(() => window.open('/assets/cv.pdf', '_blank'), 400);
+      return ['', `  <span class="tc-dim">$ cat cv.pdf | xdg-open</span>`, `  <span class="tc-green">✓ Opening CV…</span>`, ''];
+    },
+    contact: () => {
+      setTimeout(() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' }), 500);
+      return ['', `  <span class="tc-dim">Navigating to contact…</span>`, `  <span class="tc-green">✓ Done</span>`, ''];
+    },
+    ls: () => [
+      '',
+      `  <span class="tc-green">about/</span>  <span class="tc-green">experience/</span>  <span class="tc-green">achievements/</span>  <span class="tc-green">projects/</span>  <span class="tc-green">contact/</span>`,
+      '',
+    ],
+    'cat bio.txt': () => [
+      '',
+      `  <span class="tc-dim">// bio.txt</span>`,
+      `  Backend developer passionate about building`,
+      `  efficient, scalable, and maintainable systems.`,
+      `  I enjoy database design, API development,`,
+      `  and optimizing application performance.`,
+      '',
+    ],
+    // ── Easter eggs ────────────────────────────────────────────────────────────
+    'sudo hire me': async () => {
+      await printLines([
+        '',
+        `  <span class="tc-dim">[sudo] password for recruiter:</span> <span class="tc-dim">••••••••</span>`,
+        `  <span class="tc-dim">Verifying credentials…</span>`,
+      ], 40);
+      await new Promise(r => setTimeout(r, 400));
+      await printLines([`  <span class="tc-green">✓ Great taste in developers: confirmed</span>`], 0);
+      await new Promise(r => setTimeout(r, 300));
+      await printLines([`  <span class="tc-dim">Fetching package:</span> <span class="tc-cyan">arifin-yunianta@latest</span>`], 0);
+      await new Promise(r => setTimeout(r, 200));
+      await animateProgress('  Installing', 16, 70);
+      await printLines([
+        '',
+        `  <span class="tc-green">✓ Best decision you'll make today.</span>`,
+        `  <span class="tc-dim">// run: open contact to proceed</span>`,
+        '',
+      ], 32);
+    },
+    'rm -rf /': async () => {
+      const files = ['usr/', 'bin/', 'lib/', 'etc/', 'home/', 'var/', 'portfolio/'];
+      await printLines(['', `  <span class="tc-red">WARNING: destructive operation</span>`], 20);
+      for (const f of files) {
+        if (abortTyping) break;
+        await printLines([`  <span class="tc-dim">removing</span> /${f}<span class="tc-red">…</span>`], 80);
+      }
+      await printLines([
+        `  <span class="tc-red">rm: cannot remove '/': Permission denied</span>`,
+        `  <span class="tc-dim">// nice try 😄</span>`,
+        '',
+      ], 32);
+    },
+    'git log': () => [
+      '',
+      `  <span class="tc-yellow">commit a1b2c3d</span> <span class="tc-dim">(HEAD -> main)</span>`,
+      `  <span class="tc-dim">Date: Today</span>`,
+      `  <span class="tc-fg">    feat: become better developer every day</span>`,
+      '',
+      `  <span class="tc-yellow">commit f4e5d6c</span>`,
+      `  <span class="tc-dim">Date: Yesterday</span>`,
+      `  <span class="tc-fg">    fix: resolve caffeine dependency issue</span>`,
+      '',
+      `  <span class="tc-yellow">commit 7g8h9i0</span>`,
+      `  <span class="tc-dim">Date: 2023</span>`,
+      `  <span class="tc-fg">    init: started journey as backend developer</span>`,
+      '',
+    ],
+    'npm install': async () => {
+      await printLines(['', `  <span class="tc-dim">npm warn</span> deprecated <span class="tc-yellow">sleep@∞.0.0</span>`], 20);
+      await animateProgress('  Installing packages', 20, 45);
+      await printLines([
+        '',
+        `  <span class="tc-green">added 999 packages</span> in 3s`,
+        `  <span class="tc-dim">// node_modules: 4.2GB (as expected)</span>`,
+        '',
+      ], 32);
+    },
+    ping: () => [
+      '',
+      `  <span class="tc-dim">PING yunnie-pin.github.io:</span>`,
+      `  64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=<span class="tc-green">1ms</span>`,
+      `  64 bytes from 127.0.0.1: icmp_seq=2 ttl=64 time=<span class="tc-green">1ms</span>`,
+      `  64 bytes from 127.0.0.1: icmp_seq=3 ttl=64 time=<span class="tc-green">1ms</span>`,
+      `  <span class="tc-dim">— round-trip min/avg/max = 1/1/1 ms</span>`,
+      '',
+    ],
+    history: () => {
+      if (history.length === 0) return ['', `  <span class="tc-dim">(no history yet)</span>`, ''];
+      const lines: Lines = [''];
+      history.slice().reverse().forEach((c, i) => {
+        lines.push(`  <span class="tc-dim">${String(i + 1).padStart(3)}</span>  <span class="tc-fg">${escHtml(c)}</span>`);
+      });
+      lines.push('');
+      return lines;
+    },
+    clear: () => [],
+    exit:  () => [],
+  };
+
+  // ── Run command ───────────────────────────────────────────────────────────────
   async function runCmd(raw: string) {
     if (isTyping) return;
-    isTyping = true;
+    isTyping    = true;
+    abortTyping = false;
     const cmd = raw.trim();
 
     if (cmd === '') { isTyping = false; return; }
@@ -473,15 +634,14 @@ import { about } from '../data/about';
     // open [section] handler
     if (cmd.toLowerCase().startsWith('open ')) {
       const section = cmd.slice(5).trim().toLowerCase();
-      const valid = ['about', 'experience', 'projects', 'contact'];
       indEl.remove();
-      if (valid.includes(section)) {
+      if (VALID_SECTIONS.includes(section)) {
         setTimeout(() => document.getElementById(section)?.scrollIntoView({ behavior: 'smooth' }), 300);
         await printLines(['', `  Navigating to <span class="tc-cyan">${escHtml(section)}</span>…`, `  <span class="tc-green">✓ Done</span>`, '']);
       } else {
         await printLines([
           `  <span class="tc-red">unknown section:</span> ${escHtml(section)}`,
-          `  Valid: <span class="tc-cyan">about  experience  projects  contact</span>`,
+          `  Valid: <span class="tc-cyan">${VALID_SECTIONS.join('  ')}</span>`,
           '',
         ]);
       }
@@ -492,7 +652,12 @@ import { about } from '../data/about';
     const fn = COMMANDS[cmd.toLowerCase()];
     indEl.remove();
     if (fn) {
-      await printLines(fn());
+      const result = fn();
+      if (result instanceof Promise) {
+        await result;
+      } else {
+        await printLines(result);
+      }
     } else {
       await printLines([
         `  <span class="tc-red">command not found:</span> ${escHtml(cmd)}`,
@@ -702,10 +867,38 @@ import { about } from '../data/about';
       if (cmd.trim()) { history.unshift(cmd.trim()); histIdx = -1; }
       await runCmd(cmd);
     }
+    if (e.ctrlKey && e.key === 'l') {
+      e.preventDefault();
+      output!.innerHTML = '';
+    }
+    if (e.ctrlKey && e.key === 'c') {
+      e.preventDefault();
+      if (isTyping) {
+        abortTyping = true;
+        addLine(`<span class="tc-dim">^C</span>`);
+        isTyping = false;
+      }
+    }
     if (e.key === 'Tab') {
       e.preventDefault();
       const val = input.value;
       if (!val.trim()) return;
+
+      // Tab completion for "open [section]"
+      if (val.toLowerCase().startsWith('open ')) {
+        const partial = val.slice(5).toLowerCase();
+        const sectionMatches = VALID_SECTIONS.filter(s => s.startsWith(partial));
+        if (sectionMatches.length === 1) {
+          input.value = `open ${sectionMatches[0]}`;
+        } else if (sectionMatches.length > 1) {
+          addLine('');
+          addLine(`  ${sectionMatches.map(s => `<span class="tc-cyan">${s}</span>`).join('  ')}`);
+          addLine('');
+        }
+        return;
+      }
+
+      // Default tab completion for top-level commands
       const cmds = Object.keys(COMMANDS);
       const matches = cmds.filter(c => c.startsWith(val.toLowerCase()));
       if (matches.length === 1) {
@@ -954,24 +1147,32 @@ import { about } from '../data/about';
     width: fit-content;
     transition: var(--transition);
   }
-  .boot-line:hover .boot-hint { opacity: 1; color: var(--color-primary); }
+  .boot-line:hover .boot-hint { opacity: 1; }
   .boot-line.active .boot-hint { opacity: 0.4; }
   .boot-line.active > span:nth-child(2) { color: var(--color-primary) !important; }
 
   .boot-hint {
-    font-size: 0.65rem;
-    color: var(--color-fg-muted);
-    opacity: 0.85;
+    font-size: 0.75rem;
+    color: var(--color-primary);
+    opacity: 0.55;
     transition: opacity 0.2s, color 0.2s;
   }
 
   /* One-time attention pulse — plays 3x after the boot line fades in */
-  @keyframes hintAttention {
-    0%, 100% { opacity: 0.85; color: var(--color-fg-muted); }
-    50%       { opacity: 1;    color: var(--color-primary); text-shadow: 0 0 8px rgba(var(--color-primary-rgb),0.45); }
+  .boot-line:hover .boot-hint { opacity: 1; }
+
+  @keyframes cursorBlink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
   }
-  .boot-hint.attention {
-    animation: hintAttention 0.9s ease-in-out 3;
+  .boot-cursor {
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    opacity: 0;
+  }
+  .boot-cursor-blink {
+    opacity: 1;
+    animation: cursorBlink 0.8s step-end infinite;
   }
 
   /* Scroll cue */
@@ -1018,7 +1219,7 @@ import { about } from '../data/about';
   @media (prefers-reduced-motion: reduce) {
     .scroll-cue { animation: none; opacity: 1; }
     .scroll-cue-arrow { animation: none; }
-    .boot-hint.attention { animation: none; }
+    .boot-cursor-blink { animation: none; opacity: 1; }
   }
 
   /* ── Logo ↔ Terminal crossfade ──────────────────────────────────────────── */
@@ -1239,10 +1440,11 @@ import { about } from '../data/about';
   }
 
   /* Terminal color helpers */
-  .tc-green { color: var(--color-primary); }
-  .tc-cyan  { color: var(--color-cyan); }
-  .tc-red   { color: var(--color-red); }
-  .tc-dim   { color: var(--color-fg-dim); }
+  .tc-green  { color: var(--color-primary); }
+  .tc-cyan   { color: var(--color-cyan); }
+  .tc-red    { color: var(--color-red); }
+  .tc-yellow { color: var(--color-yellow); }
+  .tc-dim    { color: var(--color-fg-dim); }
   .tc-fg    { color: var(--color-fg); }
 
   .hero-name {

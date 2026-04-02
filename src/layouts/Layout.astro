@@ -2,7 +2,7 @@
 import ThemePicker from '../components/ThemePicker.astro';
 import { about } from '../data/about';
 import { socials } from '../data/contact';
-import { House, User, Briefcase, Code, Envelope, MapPin } from '@phosphor-icons/react';
+import { House, User, Briefcase, Code, Envelope, MapPin, Trophy } from '@phosphor-icons/react';
 
 interface Props {
   title?: string;
@@ -175,8 +175,9 @@ const canonicalURL = Astro.url;
       <nav style="flex: 1; margin-top: 1.5rem;">
         <ul class="nav-links" id="nav-links">
           <li><a href="#about"      class="nav-link" data-section="about"     ><User      size={14} weight="thin" aria-hidden="true" />// about</a></li>
-          <li><a href="#experience" class="nav-link" data-section="experience"><Briefcase size={14} weight="thin" aria-hidden="true" />// experience</a></li>
-          <li><a href="#projects"   class="nav-link" data-section="projects"  ><Code      size={14} weight="thin" aria-hidden="true" />// projects</a></li>
+          <li><a href="#experience"   class="nav-link" data-section="experience"  ><Briefcase size={14} weight="thin" aria-hidden="true" />// experience</a></li>
+          <li><a href="#achievements" class="nav-link" data-section="achievements"><Trophy    size={14} weight="thin" aria-hidden="true" />// achievements</a></li>
+          <li><a href="#projects"     class="nav-link" data-section="projects"    ><Code      size={14} weight="thin" aria-hidden="true" />// projects</a></li>
           <li><a href="#contact"    class="nav-link" data-section="contact"   ><Envelope  size={14} weight="thin" aria-hidden="true" />// contact</a></li>
         </ul>
       </nav>
