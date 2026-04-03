@@ -5,7 +5,7 @@ tech: [Flask, Pandas, Numpy, Laravel, React.JS]
 repo: "https://github.com/Hackathon-Dews"
 ---
 
-# Dews : Fake News Detection App
+# Dews: Fake News Detection App
 
 ## Overview
 
