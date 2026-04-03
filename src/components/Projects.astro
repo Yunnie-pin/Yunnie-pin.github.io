@@ -1,123 +1,236 @@
 ---
-import TerminalCard from './ui/TerminalCard.astro';
-import Badge from './ui/Badge.astro';
 import TerminalPrompt from './ui/TerminalPrompt.astro';
-import { projects } from '../data/projects';
-import type { Project } from '../data/projects';
+import { getCollection } from 'astro:content';
 
-const statusLabel: Record<Project['status'], string> = {
-  live:     '[LIVE]',
-  wip:      '[WIP]',
-  archived: '[ARCHIVED]',
-};
-const statusColor: Record<Project['status'], string> = {
-  live:     'var(--color-primary)',
-  wip:      'var(--color-yellow)',
-  archived: 'var(--color-fg-dim)',
+const MD_COLOR = '#519aba';
+
+// Load and sort: featured first, then live → wip → internal → archived
+const STATUS_ORDER = { live: 0, wip: 1, internal: 2, archived: 3 };
+const entries = (await getCollection('projects')).sort((a, b) => {
+  if (a.data.featured && !b.data.featured) return -1;
+  if (!a.data.featured && b.data.featured) return  1;
+  return STATUS_ORDER[a.data.status] - STATUS_ORDER[b.data.status];
+});
+
+const grouped = {
+  live:     entries.filter(e => e.data.status === 'live'),
+  wip:      entries.filter(e => e.data.status === 'wip'),
+  archived: entries.filter(e => e.data.status === 'archived'),
+  internal: entries.filter(e => e.data.status === 'internal'),
 };
 
-// Collect unique tech tags for filter
-const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
+// Pre-render markdown → HTML for each entry
+const rendered = await Promise.all(
+  entries.map(async (entry) => {
+    const { Content } = await entry.render();
+    return { id: entry.id, Content, body: entry.body, data: entry.data };
+  })
+);
+
+const defaultId = rendered.find(r => r.data.featured)?.id ?? rendered[0]?.id ?? '';
 ---
 
 <section id="projects" class="section">
   <div class="container">
 
-    <!-- Heading -->
     <h2 class="section-tab-header">
       <span class="section-tab-label glitch" data-text="[•] projects" data-section="projects">[•] projects</span>
     </h2>
     <p class="section-subheading">These are some of the projects I've worked on</p>
 
-    <!-- Filter bar (hidden when no projects) -->
-    {projects.length > 0 && (
-      <div class="filter-bar" id="filter-bar">
-        <button class="filter-btn active" data-filter="all">[ALL]</button>
-        <button class="filter-btn" data-filter="status:live">[LIVE]</button>
-        <button class="filter-btn" data-filter="status:wip">[WIP]</button>
-        <button class="filter-btn" data-filter="status:archived">[ARCHIVED]</button>
-        {allTechs.map((tech) => (
-          <button class="filter-btn" data-filter={`tech:${tech}`}>[{tech}]</button>
-        ))}
+    <!-- ── IDE Window ──────────────────────────────────────────────────────── -->
+    <div class="ide-window" id="ide-window">
+
+      <!-- Boot overlay -->
+      <div class="ide-boot" id="ide-boot" aria-hidden="true">
+        <div class="ide-boot-lines" id="ide-boot-lines"></div>
       </div>
-    )}
 
-    <!-- Empty state -->
-    {projects.length === 0 && (
-      <div class="empty-state" id="empty-state-no-projects">
-        <span class="font-mono empty-icon">_</span>
-        <p class="font-mono">// no projects found</p>
-        <p class="empty-hint">Check back later.</p>
+      <!-- Titlebar -->
+      <div class="ide-titlebar" id="ide-titlebar">
+        <div class="ide-dots">
+          <span class="ide-dot ide-dot-red"   id="ide-dot-red"   style="background:#FF5F57" title="Toggle Explorer" role="button" tabindex="0"></span>
+          <span class="ide-dot ide-dot-yellow" id="ide-dot-yellow" style="background:#FEBC2E" title="Toggle Preview/Source" role="button" tabindex="0"></span>
+          <span class="ide-dot ide-dot-green"  id="ide-dot-green"  style="background:#28C840" title="Fullscreen" role="button" tabindex="0"></span>
+        </div>
+        <span class="ide-title-text">~/projects — arifin@portfolio</span>
+        <button class="ide-toggle-btn" id="ide-sidebar-toggle" title="Toggle Explorer" aria-label="Toggle Explorer">
+          <svg width="14" height="11" viewBox="0 0 14 11" fill="none" aria-hidden="true">
+            <rect x="0" y="0"   width="14" height="1.5" rx="0.75" fill="currentColor"/>
+            <rect x="0" y="4.5" width="14" height="1.5" rx="0.75" fill="currentColor"/>
+            <rect x="0" y="9"   width="14" height="1.5" rx="0.75" fill="currentColor"/>
+          </svg>
+        </button>
       </div>
-    )}
 
-    <!-- Filter empty state (shown via JS) -->
-    <div class="empty-state hidden" id="empty-state-filter" aria-live="polite">
-      <span class="font-mono empty-icon">∅</span>
-      <p class="font-mono">// no results for active filter</p>
-      <p class="empty-hint">Try a different tag.</p>
-    </div>
+      <!-- Body -->
+      <div class="ide-body">
 
-    <!-- Bento grid -->
-    <div class="projects-grid" id="projects-grid">
-      {projects.map((project) => (
-        <div
-          class={`project-item ${project.featured ? 'featured' : ''}`}
-          data-status={project.status}
-          data-tech={project.tech.join(',')}
-        >
-          <TerminalCard title={`~/projects/${project.title.toLowerCase().replace(/ /g, '-')}`} class="h-full">
-            <div class="project-body">
+        <!-- ── Sidebar ───────────────────────────────────────────────────── -->
+        <aside class="ide-sidebar" id="ide-sidebar" aria-label="Explorer">
+          <div class="ide-sidebar-header">
+            <span class="ide-sidebar-label">EXPLORER</span>
+            <span class="ide-sidebar-count">{entries.length} files</span>
+          </div>
+          <div class="ide-sidebar-root">
+            <span class="ide-root-label">
+              <svg class="ide-chevron-root" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+                <path d="M2 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              </svg>
+              PORTFOLIO
+            </span>
+          </div>
+          <div class="ide-file-tree">
+            {(Object.entries(grouped) as [string, typeof entries][])
+              .filter(([, ps]) => ps.length > 0)
+              .map(([status, ps]) => (
+                <div class="ide-folder">
+                  <button class="ide-folder-btn" data-folder={status} aria-expanded="true">
+                    <svg class="ide-chevron" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+                      <path d="M2 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </svg>
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" class="ide-folder-icon" aria-hidden="true">
+                      <path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
+                    </svg>
+                    <span class="ide-folder-name">{status}</span>
+                    <span class="ide-folder-badge">{ps.length}</span>
+                  </button>
+                  <div class="ide-folder-files open">
+                    {ps.map(e => (
+                      <button class="ide-file" data-id={e.id} aria-selected="false">
+                        <span class="ide-file-dot" style={`background:${MD_COLOR}`}></span>
+                        <span class="ide-file-name">{e.id}</span>
+                        {e.data.featured && <span class="ide-file-star" aria-label="featured">★</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+        </aside>
 
-              <!-- Header -->
-              <div class="project-header">
-                <h3 class="project-title font-mono">{project.title}</h3>
-                <span
-                  class="font-mono"
-                  style={`font-size: 0.7rem; color: ${statusColor[project.status]};`}
-                >
-                  {statusLabel[project.status]}
-                </span>
-              </div>
+        <!-- ── Editor ────────────────────────────────────────────────────── -->
+        <div class="ide-editor">
 
-              <!-- Description -->
-              <p class="project-desc">{project.description}</p>
+          <!-- Tab bar (desktop) -->
+          <div class="ide-tab-bar" id="ide-tab-bar" role="tablist">
+            <div class="ide-tab-empty" id="ide-tab-empty">// no file open</div>
+          </div>
 
-              <!-- Tech badges -->
-              <div class="project-tech">
-                {project.tech.map((t) => (
-                  <Badge variant="primary">[{t}]</Badge>
-                ))}
-              </div>
+          <!-- Tab dropdown (mobile) -->
+          <div class="ide-tab-dropdown-wrap" id="ide-tab-dropdown-wrap">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+            </svg>
+            <select class="ide-tab-dropdown" id="ide-tab-dropdown" aria-label="Open project">
+              <option value="">// no file open</option>
+            </select>
+            <svg class="ide-dropdown-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+              <path d="M2 3l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
 
-              <!-- Links -->
-              <div class="project-links">
-                {project.url && project.url !== '#' ? (
-                  <a href={project.url} target="_blank" rel="noopener noreferrer" class="project-link font-mono">
-                    [view →]
-                  </a>
-                ) : project.url === '#' ? (
-                  <span class="project-link font-mono link-disabled">[view →]</span>
-                ) : null}
-                {project.repo && (
-                  <a
-                    href={project.repo !== '#' ? project.repo : undefined}
-                    target={project.repo !== '#' ? '_blank' : undefined}
-                    rel="noopener noreferrer"
-                    class={`project-link font-mono${project.repo === '#' ? ' link-disabled' : ''}`}
-                  >
-                    [repo →]
-                  </a>
-                )}
-              </div>
-
+          <!-- Breadcrumb + view toggle -->
+          <div class="ide-breadcrumb">
+            <div class="ide-bc-path">
+              <span class="ide-bc">~/projects</span>
+              <span class="ide-bc-sep" aria-hidden="true">›</span>
+              <span class="ide-bc ide-bc-active" id="ide-bc-status">—</span>
+              <span class="ide-bc-sep" aria-hidden="true">›</span>
+              <span class="ide-bc ide-bc-file" id="ide-bc-file">—</span>
             </div>
-          </TerminalCard>
+            <div class="ide-view-toggle" id="ide-view-toggle" role="group" aria-label="View mode">
+              <button class="ide-view-btn active" data-mode="preview" title="Markdown Preview">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                Preview
+              </button>
+              <button class="ide-view-btn" data-mode="source" title="Markdown Source">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+                </svg>
+                Source
+              </button>
+            </div>
+          </div>
+
+          <!-- Editor content -->
+          <div class="ide-content" id="ide-content">
+
+            <!-- Welcome screen -->
+            <div class="ide-welcome" id="ide-welcome">
+              <p class="ide-welcome-cmd">// start</p>
+              <p class="ide-welcome-hint">Select a file from the Explorer to view project details.</p>
+            </div>
+
+            <!-- Preview panel -->
+            <div class="ide-preview hidden" id="ide-preview"></div>
+
+            <!-- Source panel -->
+            <div class="ide-source-view hidden" id="ide-source-view">
+              <div class="ide-line-nums" id="ide-line-nums" aria-hidden="true"></div>
+              <pre class="ide-source-code" id="ide-source-code"></pre>
+            </div>
+
+          </div>
+
+          <!-- Action links -->
+          <div class="ide-actions hidden" id="ide-actions">
+            <a class="ide-action hidden" id="ide-action-view" target="_blank" rel="noopener noreferrer">[view →]</a>
+            <a class="ide-action hidden" id="ide-action-repo" target="_blank" rel="noopener noreferrer">[repo →]</a>
+            <span class="ide-action-placeholder hidden" id="ide-action-placeholder">// no external links</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Status bar -->
+      <div class="ide-statusbar">
+        <div class="ide-status-l">
+          <span class="ide-status-branch">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="6" r="3"/>
+              <path d="M6 9v6M18 9a9 9 0 01-9 9"/>
+            </svg>
+            main
+          </span>
+          <span class="ide-status-file">
+            <span class="ide-status-dot" id="ide-status-dot">●</span>
+            <span id="ide-status-text">no file open</span>
+          </span>
+        </div>
+        <div class="ide-status-r">
+          <span id="ide-status-tech"></span>
+          <span class="ide-status-sep" aria-hidden="true">|</span>
+          <span id="ide-status-ln">Markdown</span>
+          <span class="ide-status-sep" aria-hidden="true">|</span>
+          <span>UTF-8</span>
+        </div>
+      </div>
+
+    </div><!-- end .ide-window -->
+
+    <!-- Pre-rendered project data (hidden, read by JS) -->
+    <div hidden aria-hidden="true" id="ide-project-store">
+      {rendered.map(r => (
+        <div
+          class="ide-proj-entry"
+          data-id={r.id}
+          data-title={r.data.title}
+          data-status={r.data.status}
+          data-tech={r.data.tech.join(',')}
+          data-url={r.data.url ?? ''}
+          data-repo={r.data.repo ?? ''}
+          data-featured={r.data.featured ? 'true' : 'false'}
+          data-body={r.body}
+        >
+          <r.Content />
         </div>
       ))}
     </div>
 
-    <!-- CTA -->
     <div class="cta-wrap">
       <TerminalPrompt command="git log --oneline --all" comment="more on GitHub" />
     </div>
@@ -125,198 +238,1080 @@ const allTechs = [...new Set(projects.flatMap((p) => p.tech))].sort();
   </div>
 </section>
 
-<script>
-  // ── On-scroll Reveal ───────────────────────────────────────────────────────
-  const items = document.querySelectorAll<HTMLElement>('.project-item');
+<script define:vars={{ defaultId }} is:inline>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let openTabs    = [];
+  let activeId    = null;
+  let viewMode    = 'preview';
+  let isFullscreen = false;
+  let focusedFileIdx = -1; // keyboard nav index in flat file list
 
-  // Skip animation if user prefers reduced motion
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    items.forEach((item) => item.classList.add('visible'));
-  } else {
-    const revealObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-            revealObserver.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.15 }
-    );
-    items.forEach((item) => revealObserver.observe(item));
+  // ── DOM ────────────────────────────────────────────────────────────────────
+  const ideWindow     = document.getElementById('ide-window');
+  const ideContent    = document.getElementById('ide-content');
+  const tabBar        = document.getElementById('ide-tab-bar');
+  const tabEmpty      = document.getElementById('ide-tab-empty');
+  const tabDropdown   = document.getElementById('ide-tab-dropdown');
+  const welcome       = document.getElementById('ide-welcome');
+  const preview       = document.getElementById('ide-preview');
+  const sourceView    = document.getElementById('ide-source-view');
+  const lineNums      = document.getElementById('ide-line-nums');
+  const sourceCode    = document.getElementById('ide-source-code');
+  const actions       = document.getElementById('ide-actions');
+  const actionView    = document.getElementById('ide-action-view');
+  const actionRepo    = document.getElementById('ide-action-repo');
+  const actionHolder  = document.getElementById('ide-action-placeholder');
+  const bcStatus      = document.getElementById('ide-bc-status');
+  const bcFile        = document.getElementById('ide-bc-file');
+  const statusDot     = document.getElementById('ide-status-dot');
+  const statusText    = document.getElementById('ide-status-text');
+  const statusTech    = document.getElementById('ide-status-tech');
+  const statusLn      = document.getElementById('ide-status-ln');
+  const sidebar       = document.getElementById('ide-sidebar');
+  const viewToggle    = document.getElementById('ide-view-toggle');
+  const store         = document.getElementById('ide-project-store');
+  const bootEl        = document.getElementById('ide-boot');
+  const bootLines     = document.getElementById('ide-boot-lines');
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const getEntry   = id => store?.querySelector(`[data-id="${id}"]`);
+  const getAllFiles = () => Array.from(document.querySelectorAll('.ide-file'));
+
+  function showPanel(mode) {
+    preview.classList.toggle('hidden',    mode !== 'preview');
+    sourceView.classList.toggle('hidden', mode !== 'source');
+    viewToggle?.querySelectorAll('.ide-view-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
   }
 
-  // ── Filter ─────────────────────────────────────────────────────────────────
-  const filterBar = document.getElementById('filter-bar');
-  const allItems = Array.from(document.querySelectorAll<HTMLElement>('.project-item'));
-  const emptyFilter = document.getElementById('empty-state-filter');
+  // ── Status flash ───────────────────────────────────────────────────────────
+  let flashTimer = null;
+  function flashStatus(msg, durationMs = 1200) {
+    if (flashTimer) clearTimeout(flashTimer);
+    const prev = statusText.textContent;
+    statusText.textContent = msg;
+    statusText.classList.add('ide-status-flash');
+    flashTimer = setTimeout(() => {
+      statusText.classList.remove('ide-status-flash');
+      if (activeId) updateStatusBar(activeId);
+      else statusText.textContent = prev;
+    }, durationMs);
+  }
 
-  filterBar?.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.filter-btn');
-    if (!btn) return;
-
-    // Update active button
-    filterBar.querySelectorAll('.filter-btn').forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-
-    const filter = btn.dataset.filter ?? 'all';
-    let visibleCount = 0;
-
-    allItems.forEach((item) => {
-      const status = item.dataset.status ?? '';
-      const techs  = (item.dataset.tech ?? '').split(',');
-
-      let show = true;
-      if (filter === 'all') {
-        show = true;
-      } else if (filter.startsWith('status:')) {
-        show = status === filter.replace('status:', '');
-      } else if (filter.startsWith('tech:')) {
-        show = techs.includes(filter.replace('tech:', ''));
+  // ── Boot sequence ──────────────────────────────────────────────────────────
+  function runBoot(onDone) {
+    const allFiles = getAllFiles();
+    const msgs = [
+      '$ initializing workspace...',
+      `$ loading ${allFiles.length} project files...`,
+      `$ opening ${defaultId || 'workspace'}`,
+    ];
+    bootEl.classList.add('active');
+    let i = 0;
+    function next() {
+      if (i >= msgs.length) {
+        setTimeout(() => {
+          bootEl.classList.remove('active');
+          onDone();
+        }, 300);
+        return;
       }
+      const line = document.createElement('div');
+      line.className = 'ide-boot-line';
+      line.textContent = msgs[i++];
+      bootLines.appendChild(line);
+      setTimeout(next, 380);
+    }
+    next();
+  }
 
-      item.style.display = show ? '' : 'none';
+  // ── Tab render ─────────────────────────────────────────────────────────────
+  function renderTabs() {
+    tabBar.querySelectorAll('.ide-tab').forEach(t => t.remove());
+    tabDropdown.innerHTML = openTabs.length === 0
+      ? '<option value="">// no file open</option>'
+      : openTabs.map(id => `<option value="${id}" ${id === activeId ? 'selected' : ''}>${id}</option>`).join('');
 
-      if (show) {
-        visibleCount++;
-        if (!item.classList.contains('visible')) {
-          item.classList.add('visible');
-        }
-      }
+    if (openTabs.length === 0) { tabEmpty.classList.remove('hidden'); return; }
+    tabEmpty.classList.add('hidden');
+
+    openTabs.forEach(id => {
+      const isActive = id === activeId;
+      const tab = document.createElement('button');
+      tab.className = `ide-tab${isActive ? ' active' : ''}`;
+      tab.dataset.id = id;
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-selected', String(isActive));
+      tab.innerHTML = `
+        <span class="ide-tab-dot" style="background:#519aba" aria-hidden="true"></span>
+        <span class="ide-tab-name">${id}</span>
+        <span class="ide-tab-close" aria-label="close ${id}">×</span>
+      `;
+      tab.addEventListener('click', e => {
+        if (e.target.closest('.ide-tab-close')) closeTab(id, e);
+        else openProject(id);
+      });
+      tabBar.insertBefore(tab, tabEmpty);
     });
+  }
 
-    // Toggle filter empty state
-    if (emptyFilter) {
-      emptyFilter.classList.toggle('hidden', visibleCount > 0);
+  // ── Open / close ───────────────────────────────────────────────────────────
+  function openProject(id) {
+    const isNew = !openTabs.includes(id);
+    if (isNew) openTabs.push(id);
+    activeId = id;
+    renderTabs();
+    renderEditor(id);
+    setExplorerActive(id);
+    updateStatusBar(id);
+    if (isNew) flashStatus(`// opening ${id}...`, 900);
+  }
+
+  function closeTab(id, e) {
+    e?.stopPropagation();
+    const idx  = openTabs.indexOf(id);
+    openTabs   = openTabs.filter(t => t !== id);
+    flashStatus('// tab closed', 700);
+    if (activeId === id) {
+      openTabs.length > 0
+        ? openProject(openTabs[Math.min(idx, openTabs.length - 1)])
+        : showWelcome();
+    } else {
+      renderTabs();
+    }
+  }
+
+  // ── Render editor with scan animation ─────────────────────────────────────
+  function renderEditor(id) {
+    const entry = getEntry(id);
+    if (!entry) return;
+
+    welcome.classList.add('hidden');
+    actions.classList.remove('hidden');
+    showPanel(viewMode);
+
+    // Preview with scan-in animation
+    const clone = entry.cloneNode(true);
+    preview.innerHTML = '';
+    preview.classList.remove('ide-scan');
+    preview.appendChild(clone);
+    requestAnimationFrame(() => preview.classList.add('ide-scan'));
+
+    // Source
+    const body  = entry.dataset.body ?? '';
+    const lines = body.split('\n');
+    lineNums.innerHTML     = lines.map((_, i) => `<span>${i + 1}</span>`).join('');
+    sourceCode.textContent = body;
+
+    // Breadcrumb + meta
+    bcStatus.textContent = entry.dataset.status ?? '';
+    bcFile.textContent   = id;
+    statusLn.textContent = `${lines.length} lines`;
+
+    // Actions
+    const url  = entry.dataset.url  ?? '';
+    const repo = entry.dataset.repo ?? '';
+    const hasView = url  && url  !== '#';
+    const hasRepo = repo && repo !== '#';
+    actionView.classList.toggle('hidden', !hasView);
+    actionRepo.classList.toggle('hidden', !hasRepo);
+    actionHolder.classList.toggle('hidden', hasView || hasRepo);
+    if (hasView) actionView.href = url;
+    if (hasRepo) actionRepo.href = repo;
+
+    // Sync keyboard focus index
+    focusedFileIdx = getAllFiles().findIndex(f => f.dataset.id === id);
+  }
+
+  function showWelcome() {
+    activeId = null;
+    renderTabs();
+    welcome.classList.remove('hidden');
+    preview.classList.add('hidden');
+    sourceView.classList.add('hidden');
+    actions.classList.add('hidden');
+    bcStatus.textContent  = '—';
+    bcFile.textContent    = '—';
+    statusDot.style.color = 'var(--color-fg-dim)';
+    statusText.textContent = 'no file open';
+    statusTech.textContent = '';
+    statusLn.textContent  = 'Markdown';
+    setExplorerActive(null);
+    focusedFileIdx = -1;
+  }
+
+  // ── Explorer active state ──────────────────────────────────────────────────
+  function setExplorerActive(id) {
+    getAllFiles().forEach((el, i) => {
+      const active = el.dataset.id === id;
+      el.classList.toggle('active', active);
+      el.setAttribute('aria-selected', String(active));
+      if (active) focusedFileIdx = i;
+    });
+  }
+
+  // ── Status bar ─────────────────────────────────────────────────────────────
+  function updateStatusBar(id) {
+    const entry = getEntry(id);
+    if (!entry) return;
+    const colors = { live: 'var(--color-primary)', wip: 'var(--color-yellow)', internal: 'var(--color-cyan)', archived: 'var(--color-fg-dim)' };
+    const status = entry.dataset.status ?? '';
+    statusDot.style.color  = colors[status] ?? 'var(--color-fg-dim)';
+    statusText.textContent = `${status.toUpperCase()} · ${id}`;
+    statusTech.textContent = (entry.dataset.tech ?? '').split(',')[0] ?? '';
+  }
+
+  // ── Window dots ────────────────────────────────────────────────────────────
+  // Red: toggle sidebar
+  document.getElementById('ide-dot-red')?.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    flashStatus(sidebar.classList.contains('collapsed') ? '// explorer hidden' : '// explorer shown', 800);
+  });
+
+  // Yellow: toggle preview ↔ source
+  document.getElementById('ide-dot-yellow')?.addEventListener('click', () => {
+    if (!activeId) return;
+    viewMode = viewMode === 'preview' ? 'source' : 'preview';
+    showPanel(viewMode);
+    renderEditor(activeId);
+    flashStatus(`// ${viewMode} mode`, 700);
+  });
+
+  // Green: fullscreen toggle
+  let popupOverlay = null;
+  document.getElementById('ide-dot-green')?.addEventListener('click', toggleFullscreen);
+
+  function toggleFullscreen() {
+    if (isFullscreen) {
+      isFullscreen = false;
+      ideWindow.classList.remove('ide-fullscreen');
+      ideWindow.parentElement.style.minHeight = '';
+      popupOverlay?.remove();
+      popupOverlay = null;
+      document.removeEventListener('keydown', escFullscreen);
+      flashStatus('// exited fullscreen', 700);
+    } else {
+      isFullscreen = true;
+      ideWindow.parentElement.style.minHeight = ideWindow.offsetHeight + 'px';
+      ideWindow.classList.add('ide-fullscreen');
+      popupOverlay = document.createElement('div');
+      popupOverlay.className = 'ide-overlay';
+      document.body.appendChild(popupOverlay);
+      requestAnimationFrame(() => popupOverlay.classList.add('active'));
+      popupOverlay.addEventListener('click', toggleFullscreen);
+      document.addEventListener('keydown', escFullscreen);
+      flashStatus('// fullscreen mode', 700);
+    }
+  }
+  function escFullscreen(e) { if (e.key === 'Escape') toggleFullscreen(); }
+
+  // ── View toggle (breadcrumb buttons) ──────────────────────────────────────
+  viewToggle?.addEventListener('click', e => {
+    const btn = e.target.closest('.ide-view-btn');
+    if (!btn) return;
+    viewMode = btn.dataset.mode;
+    showPanel(viewMode);
+    if (activeId) renderEditor(activeId);
+  });
+
+  // ── Folder toggle ──────────────────────────────────────────────────────────
+  document.querySelectorAll('.ide-folder-btn').forEach(btn => {
+    const folder  = btn.closest('.ide-folder');
+    const files   = folder?.querySelector('.ide-folder-files');
+    const chevron = btn.querySelector('.ide-chevron');
+    if (files?.classList.contains('open') && chevron) chevron.style.transform = 'rotate(90deg)';
+    btn.addEventListener('click', () => {
+      if (!files || !chevron) return;
+      const isOpen = files.classList.toggle('open');
+      chevron.style.transform = isOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+      btn.setAttribute('aria-expanded', String(isOpen));
+    });
+  });
+  const rootChevron = document.querySelector('.ide-chevron-root');
+  if (rootChevron) rootChevron.style.transform = 'rotate(90deg)';
+
+  // ── File click ─────────────────────────────────────────────────────────────
+  getAllFiles().forEach(btn => {
+    btn.addEventListener('click', () => openProject(btn.dataset.id ?? ''));
+  });
+
+  // ── Keyboard navigation ───────────────────────────────────────────────────
+  ideWindow?.addEventListener('keydown', e => {
+    const files = getAllFiles().filter(f => f.closest('.ide-folder-files.open'));
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const dir = e.key === 'ArrowDown' ? 1 : -1;
+      focusedFileIdx = Math.max(0, Math.min(files.length - 1, focusedFileIdx + dir));
+      files[focusedFileIdx]?.focus();
+
+    } else if (e.key === 'Enter') {
+      if (focusedFileIdx >= 0 && files[focusedFileIdx]) {
+        openProject(files[focusedFileIdx].dataset.id ?? '');
+      }
+
+    } else if (e.key === 'Escape') {
+      if (isFullscreen) { toggleFullscreen(); return; }
+      if (activeId) { closeTab(activeId, null); return; }
+      if (!sidebar.classList.contains('collapsed')) sidebar.classList.add('collapsed');
+
+    } else if (e.key === 'Tab') {
+      // Let default Tab work but track focus
     }
   });
+
+  // ── Sidebar toggle button ──────────────────────────────────────────────────
+  document.getElementById('ide-sidebar-toggle')?.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+  });
+
+  // ── Mobile dropdown ────────────────────────────────────────────────────────
+  tabDropdown?.addEventListener('change', () => {
+    if (tabDropdown.value) openProject(tabDropdown.value);
+  });
+
+  // ── Drag titlebar ──────────────────────────────────────────────────────────
+  const titlebar = document.getElementById('ide-titlebar');
+  let dragging = false, dragStartX = 0, dragStartY = 0;
+  let dragPlaceholder = null;
+
+  function createDragPlaceholder() {
+    const r = ideWindow.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.style.cssText = `
+      position: absolute;
+      top: ${r.top + window.scrollY}px;
+      left: ${r.left + window.scrollX}px;
+      width: ${r.width}px;
+      height: ${r.height}px;
+      border-radius: 8px;
+      border: 1px dashed rgba(var(--color-primary-rgb), 0.35);
+      background: repeating-linear-gradient(
+        -45deg,
+        transparent 0px, transparent 6px,
+        rgba(var(--color-primary-rgb), 0.04) 6px, rgba(var(--color-primary-rgb), 0.04) 12px
+      );
+      pointer-events: none;
+      z-index: 49;
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
+    `;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => { el.style.opacity = '1'; });
+    return el;
+  }
+
+  titlebar?.addEventListener('mousedown', e => {
+    if (e.target.closest('.ide-dot, .ide-toggle-btn')) return;
+    dragging    = true;
+    dragStartX  = e.clientX;
+    dragStartY  = e.clientY;
+    ideWindow.style.transition = 'none';
+    ideWindow.classList.add('is-dragging');
+    dragPlaceholder = createDragPlaceholder();
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    ideWindow.style.transform = `translate(${e.clientX - dragStartX}px, ${e.clientY - dragStartY}px)`;
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    ideWindow.classList.remove('is-dragging');
+    if (dragPlaceholder) dragPlaceholder.style.opacity = '0';
+    ideWindow.style.transition = 'transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    ideWindow.style.transform  = 'translate(0,0)';
+    ideWindow.addEventListener('transitionend', () => {
+      ideWindow.style.transition = '';
+      ideWindow.style.transform  = '';
+      dragPlaceholder?.remove();
+      dragPlaceholder = null;
+    }, { once: true });
+  });
+
+  // ── Wheel trap (document-level, non-passive) ──────────────────────────────
+  // Must be on document with passive:false — element-level listeners can be
+  // ignored if a passive ancestor listener was registered first by the browser.
+  document.addEventListener('wheel', e => {
+    const win = document.getElementById('ide-window');
+    if (!win) return;
+
+    // Resolve actual Element (e.target may be a text node)
+    let node = e.target instanceof Element ? e.target : e.target?.parentElement;
+    if (!node || !win.contains(node)) return;
+
+    // We're inside the IDE — always prevent page scroll
+    e.preventDefault();
+
+    // Walk up from the event target to find the first scrollable element
+    let scrolled = false;
+    let el = node;
+    while (el && el !== win) {
+      if (el instanceof Element) {
+        const oy = getComputedStyle(el).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight) {
+          const atTop    = el.scrollTop === 0 && e.deltaY < 0;
+          const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1 && e.deltaY > 0;
+          if (!atTop && !atBottom) { el.scrollTop += e.deltaY; scrolled = true; break; }
+        }
+      }
+      el = el.parentElement;
+    }
+    // Fallback: always deliver scroll to ide-content
+    if (!scrolled) {
+      const content = document.getElementById('ide-content');
+      if (content) content.scrollTop += e.deltaY;
+    }
+  }, { passive: false });
+
+  // ── Mobile: collapse sidebar by default ───────────────────────────────────
+  if (window.innerWidth < 640) sidebar.classList.add('collapsed');
+
+  // ── Init with boot sequence ───────────────────────────────────────────────
+  runBoot(() => { if (defaultId) openProject(defaultId); });
 </script>
 
 <style>
-  .projects-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  @media (min-width: 640px) {
-    .projects-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-  @media (min-width: 1024px) {
-    .projects-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-    .project-item.featured {
-      grid-column: span 2;
-    }
-  }
-
-  /* On-scroll animation states (overrides global) */
-  .project-item {
-    opacity: 0;
-    transform: translateY(24px);
-    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
-  }
-  .project-item.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  .project-item:nth-child(2) { transition-delay: 75ms;  }
-  .project-item:nth-child(3) { transition-delay: 150ms; }
-  .project-item:nth-child(4) { transition-delay: 225ms; }
-
-  @media (prefers-reduced-motion: reduce) {
-    .project-item {
-      opacity: 1;
-      transform: none;
-      transition: none;
-    }
-  }
-
-  .h-full { height: 100%; }
-
-  .project-body {
+  /* ── IDE Window ──────────────────────────────────────────────────────────── */
+  .ide-window {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    height: 100%;
+    height: 540px;
+    position: relative;
+    border: 1px solid var(--color-border-bright);
+    border-radius: var(--radius-lg);
+    background: var(--color-panel);
+    overflow: hidden;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+    transition: box-shadow 0.3s ease-out, border-color 0.3s ease-out;
+  }
+  .ide-window:not(.is-dragging):not(.ide-fullscreen):hover {
+    border-color: rgba(var(--color-primary-rgb), 0.28);
+    box-shadow: var(--shadow-lg), 0 0 32px rgba(var(--color-primary-rgb), 0.1), 0 0 64px rgba(var(--color-primary-rgb), 0.05);
   }
 
-  .project-header {
+  /* ── Boot overlay ───────────────────────────────────────────────────────────*/
+  .ide-boot {
+    position: absolute;
+    inset: 0;
+    background: var(--color-void);
+    z-index: 20;
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 0.5rem;
+    flex-direction: column;
+    justify-content: center;
+    padding: 24px 28px;
+    gap: 6px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease-out;
+    border-radius: var(--radius-lg);
+  }
+  .ide-boot.active { opacity: 1; pointer-events: all; }
+  .ide-boot-line {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--color-primary);
+    opacity: 0;
+    transform: translateX(-6px);
+    animation: boot-line-in 0.2s ease-out forwards;
+  }
+  @keyframes boot-line-in {
+    to { opacity: 1; transform: translateX(0); }
   }
 
-  .project-title {
-    font-size: 1rem;
+  /* ── Dot interactions ────────────────────────────────────────────────────── */
+  .ide-dot {
+    cursor: pointer;
+    transition: transform 0.15s ease-out, filter 0.15s;
+  }
+  .ide-dot:hover  { transform: scale(1.25); filter: brightness(1.3); }
+  .ide-dot:active { transform: scale(0.9); }
+
+  /* ── Dragging state ──────────────────────────────────────────────────────── */
+  .ide-window.is-dragging {
+    cursor: grabbing;
+    box-shadow: var(--shadow-lg), 0 0 32px rgba(var(--color-primary-rgb), 0.1);
+    border-color: rgba(var(--color-primary-rgb), 0.3);
+    z-index: 50;
+  }
+  .ide-window.is-dragging .ide-titlebar { cursor: grabbing; }
+  #ide-titlebar { cursor: grab; user-select: none; }
+
+  /* ── Fullscreen mode ─────────────────────────────────────────────────────── */
+  .ide-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.72);
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+  }
+  .ide-overlay.active { opacity: 1; }
+
+  @keyframes ide-expand {
+    from { transform: translate(-50%,-50%) scale(0.9); opacity: 0; }
+    to   { transform: translate(-50%,-50%) scale(1);   opacity: 1; }
+  }
+  @keyframes ide-collapse {
+    from { transform: translate(-50%,-50%) scale(1);   opacity: 1; }
+    to   { transform: translate(-50%,-50%) scale(0.9); opacity: 0; }
+  }
+  .ide-window.ide-fullscreen {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: min(900px, 92vw) !important;
+    height: min(620px, 88vh) !important;
+    margin: 0 !important;
+    z-index: 10001 !important;
+    animation: ide-expand 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  /* ── Scan-in animation (preview) ─────────────────────────────────────────── */
+  @keyframes ide-scan {
+    from { opacity: 0; clip-path: inset(0 0 100% 0); }
+    to   { opacity: 1; clip-path: inset(0 0 0% 0); }
+  }
+  .ide-preview.ide-scan { animation: ide-scan 0.3s ease-out forwards; }
+
+  /* ── Status flash ────────────────────────────────────────────────────────── */
+  .ide-status-flash { color: var(--color-primary) !important; }
+
+  /* ── Titlebar ─────────────────────────────────────────────────────────────── */
+  .ide-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    background: var(--color-void);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .ide-dots { display: flex; gap: 6px; flex-shrink: 0; }
+  .ide-dot  { width: 11px; height: 11px; border-radius: 50%; }
+  .ide-title-text {
+    flex: 1;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.67rem;
+    color: var(--color-fg-dim);
+  }
+  .ide-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--color-fg-dim);
+    cursor: pointer;
+    padding: 3px 5px;
+    border-radius: 3px;
+    line-height: 0;
+    transition: color 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+  .ide-toggle-btn:hover { color: var(--color-fg); background: var(--color-elevated); }
+
+  /* ── Body ────────────────────────────────────────────────────────────────── */
+  .ide-body { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+
+  /* ── Sidebar ─────────────────────────────────────────────────────────────── */
+  .ide-sidebar {
+    width: 210px;
+    flex-shrink: 0;
+    background: var(--color-void);
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-bright) transparent;
+    transition: width 0.2s ease, opacity 0.2s ease;
+  }
+  .ide-sidebar.collapsed { width: 0; opacity: 0; pointer-events: none; }
+
+  .ide-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px 4px;
+    flex-shrink: 0;
+  }
+  .ide-sidebar-label { font-family: var(--font-mono); font-size: 0.6rem; color: var(--color-fg-dim); letter-spacing: 0.1em; font-weight: 600; }
+  .ide-sidebar-count { font-family: var(--font-mono); font-size: 0.57rem; color: var(--color-fg-dim); }
+
+  .ide-sidebar-root { padding: 2px 8px 4px; }
+  .ide-root-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--color-fg-muted);
     font-weight: 600;
+    user-select: none;
+  }
+  .ide-chevron-root { flex-shrink: 0; color: var(--color-fg-dim); }
+
+  /* ── Folder ──────────────────────────────────────────────────────────────── */
+  .ide-folder-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    padding: 3px 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-fg-muted);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-align: left;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .ide-folder-btn:hover { background: var(--color-elevated); color: var(--color-fg); }
+  .ide-chevron { flex-shrink: 0; color: var(--color-fg-dim); transition: transform 0.18s ease; }
+  .ide-folder-icon { flex-shrink: 0; color: var(--color-yellow); opacity: 0.7; }
+  .ide-folder-name { flex: 1; text-transform: uppercase; font-size: 0.68rem; letter-spacing: 0.04em; }
+  .ide-folder-badge {
+    font-size: 0.57rem;
+    background: var(--color-elevated);
+    color: var(--color-fg-dim);
+    border-radius: 8px;
+    padding: 0 5px;
+    min-width: 16px;
+    text-align: center;
+  }
+  .ide-folder-files { max-height: 0; overflow: hidden; transition: max-height 0.22s ease-out; }
+  .ide-folder-files.open { max-height: 400px; }
+
+  /* ── File item ───────────────────────────────────────────────────────────── */
+  .ide-file {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    padding: 3px 8px 3px 26px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-fg-dim);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-align: left;
+    transition: background 0.12s, color 0.12s;
+    white-space: nowrap;
+  }
+  .ide-file:hover { background: rgba(var(--color-primary-rgb), 0.05); color: var(--color-fg-muted); }
+  .ide-file.active {
+    background: rgba(var(--color-primary-rgb), 0.08);
+    color: var(--color-fg);
+    border-left: 2px solid var(--color-primary);
+    padding-left: 24px;
+  }
+  .ide-file-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .ide-file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+  .ide-file-star { color: var(--color-yellow); font-size: 0.58rem; flex-shrink: 0; }
+
+  /* ── Editor ──────────────────────────────────────────────────────────────── */
+  .ide-editor { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; min-height: 0; }
+
+  /* Tab bar */
+  .ide-tab-bar {
+    display: flex;
+    align-items: stretch;
+    background: var(--color-void);
+    border-bottom: 1px solid var(--color-border);
+    overflow-x: auto;
+    flex-shrink: 0;
+    scrollbar-width: none;
+    padding-left: 4px;
+    gap: 20px;
+  }
+  .ide-tab-bar::-webkit-scrollbar { display: none; }
+  .ide-tab-empty {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    height: 28px;
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    color: var(--color-fg-dim);
+  }
+  .ide-tab-empty.hidden { display: none; }
+  .ide-tab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px 0 10px;
+    height: 28px;
+    background: var(--color-void);
+    border: none;
+    border-right: 1px solid var(--color-border);
+    cursor: pointer;
+    color: var(--color-fg-dim);
+    font-size: 0.58rem;
+    white-space: nowrap;
+    transition: color 0.15s, background 0.15s;
+  }
+  .ide-tab:hover { background: var(--color-elevated); color: var(--color-fg-muted); }
+  .ide-tab.active {
+    background: var(--color-panel);
     color: var(--color-fg);
   }
-
-  .project-desc {
-    color: var(--color-fg-muted);
-    font-size: 0.875rem;
-    line-height: 1.7;
-    flex: 1;
+  /* Active indicator line at top */
+  .ide-tab.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--color-primary);
+    box-shadow: 0 0 6px rgba(var(--color-primary-rgb), 0.6);
   }
-
-  .project-tech {
+  .ide-tab-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    opacity: 0.5;
+    transition: opacity 0.2s, box-shadow 0.2s;
+  }
+  .ide-tab.active .ide-tab-dot {
+    opacity: 1;
+    box-shadow: 0 0 5px currentColor;
+  }
+  .ide-tab-close {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    font-size: 0.72rem;
+    border-radius: 3px;
+    color: var(--color-fg-dim);
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s;
+  }
+  .ide-tab:hover .ide-tab-close,
+  .ide-tab.active .ide-tab-close { opacity: 1; }
+  .ide-tab-close:hover { background: rgba(255,255,255,0.1); color: var(--color-fg); }
+  .ide-tab-name {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
   }
 
-  .project-links {
+  /* Breadcrumb */
+  .ide-breadcrumb {
     display: flex;
-    gap: 1rem;
-    margin-top: auto;
-    padding-top: 0.5rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3px 10px 3px 14px;
+    background: var(--color-panel);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    gap: 8px;
   }
+  .ide-bc-path { display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; }
+  .ide-bc { font-family: var(--font-mono); font-size: 0.65rem; color: var(--color-fg-dim); white-space: nowrap; }
+  .ide-bc-active { color: var(--color-fg-muted); }
+  .ide-bc-file   { color: var(--color-fg-muted); overflow: hidden; text-overflow: ellipsis; }
+  .ide-bc-sep    { font-size: 0.6rem; color: var(--color-fg-dim); flex-shrink: 0; }
 
-  .project-link {
-    font-size: 0.78rem;
+  /* View toggle */
+  .ide-view-toggle {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    flex-shrink: 0;
+  }
+  .ide-view-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: none;
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--color-fg-dim);
+    border-radius: 3px;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
+    line-height: 1.4;
+  }
+  .ide-view-btn:hover { color: var(--color-fg-muted); background: var(--color-elevated); }
+  .ide-view-btn.active {
     color: var(--color-primary);
-    text-decoration: none;
-    transition: var(--transition);
-  }
-  .project-link:hover {
-    text-shadow: 0 0 8px rgba(var(--color-primary-rgb),0.50);
+    border-color: rgba(var(--color-primary-rgb), 0.35);
+    background: rgba(var(--color-primary-rgb), 0.06);
   }
 
-  .cta-wrap {
-    text-align: center;
-    margin-top: 2rem;
+  /* Content area */
+  .ide-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-bright) transparent;
   }
 
-  .empty-state {
+  /* Store: completely removed from layout */
+  #ide-project-store { display: none; }
+  .ide-content::-webkit-scrollbar       { width: 3px; }
+  .ide-content::-webkit-scrollbar-track { background: transparent; }
+  .ide-content::-webkit-scrollbar-thumb { background: var(--color-border-bright); border-radius: 2px; }
+
+  /* Welcome */
+  .ide-welcome {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    height: 100%;
     gap: 0.5rem;
-    padding: 3rem 1rem;
-    color: var(--color-fg-dim);
+    padding: 2rem;
     text-align: center;
   }
-  .empty-icon {
-    font-size: 2rem;
-    color: var(--color-primary);
-    opacity: 0.5;
-    animation: blink 1.2s step-start infinite;
+  .ide-welcome.hidden { display: none; }
+  .ide-welcome-cmd  { font-family: var(--font-mono); font-size: 0.82rem; color: var(--color-primary); opacity: 0.5; }
+  .ide-welcome-hint { font-family: var(--font-mono); font-size: 0.7rem; color: var(--color-fg-dim); }
+
+  /* ── Markdown Preview ────────────────────────────────────────────────────── */
+  .ide-preview {
+    padding: 20px 24px 24px;
+    max-width: 680px;
   }
-  .empty-state p {
-    font-size: 0.875rem;
+  .ide-preview.hidden { display: none; }
+
+  /* Store wrapper: block so hit-testing works correctly */
+  .ide-preview > div { display: block; }
+
+  .ide-preview :global(h2) {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin: 1.5rem 0 0.5rem;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .ide-preview :global(h2:first-child),
+  .ide-preview :global(h3:first-child) { margin-top: 0; }
+
+  .ide-preview :global(h3) {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-fg);
+    margin: 1.2rem 0 0.35rem;
+  }
+
+  .ide-preview :global(p) {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--color-fg-muted);
+    line-height: 1.75;
+    margin-bottom: 0.75rem;
+  }
+
+  .ide-preview :global(ul),
+  .ide-preview :global(ol) {
+    padding-left: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+  .ide-preview :global(li) {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--color-fg-muted);
+    line-height: 1.7;
+    margin-bottom: 0.2rem;
+  }
+  .ide-preview :global(li::marker) { color: var(--color-primary); }
+
+  .ide-preview :global(strong) { color: var(--color-fg); font-weight: 600; }
+  .ide-preview :global(em)     { color: var(--color-yellow); font-style: italic; }
+
+  .ide-preview :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    background: var(--color-elevated);
+    color: var(--color-cyan);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--color-border);
+  }
+
+  .ide-preview :global(pre) {
+    background: var(--color-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin-bottom: 0.75rem;
+  }
+  .ide-preview :global(pre code) {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.77rem;
     color: var(--color-fg-muted);
   }
-  .empty-hint {
-    font-size: 0.75rem;
-    color: var(--color-fg-dim);
-    margin-top: 0.25rem;
+
+  .ide-preview :global(blockquote) {
+    border-left: 3px solid var(--color-yellow);
+    padding: 6px 12px;
+    background: rgba(255, 184, 108, 0.05);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    margin-bottom: 0.75rem;
   }
-  .hidden {
-    display: none;
+  .ide-preview :global(blockquote p) { color: var(--color-yellow); margin: 0; }
+
+  .ide-preview :global(a) {
+    color: var(--color-cyan);
+    text-decoration: none;
+  }
+  .ide-preview :global(a:hover) { text-decoration: underline; }
+
+  .ide-preview :global(hr) {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 1.25rem 0;
+  }
+
+  /* ── Source View ─────────────────────────────────────────────────────────── */
+  .ide-source-view { display: flex; padding: 14px 0; }
+  .ide-source-view.hidden { display: none; }
+
+  .ide-line-nums {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding: 0 12px 0 16px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.65;
+    color: var(--color-fg-dim);
+    user-select: none;
+    min-width: 44px;
+    flex-shrink: 0;
+    opacity: 0.45;
+  }
+  .ide-line-nums span { display: block; }
+
+  .ide-source-code {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.65;
+    color: var(--color-fg-muted);
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding-right: 16px;
+    margin: 0;
+    min-width: 0;
+  }
+
+  /* ── Actions bar ─────────────────────────────────────────────────────────── */
+  .ide-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 7px 16px;
+    border-top: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .ide-actions.hidden { display: none; }
+  .ide-action {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: text-shadow 0.2s;
+  }
+  .ide-action:hover { text-shadow: 0 0 8px rgba(var(--color-primary-rgb), 0.55); }
+  .ide-action.hidden { display: none; }
+  .ide-action-placeholder { font-family: var(--font-mono); font-size: 0.72rem; color: var(--color-fg-dim); }
+  .ide-action-placeholder.hidden { display: none; }
+
+  /* ── Status bar ──────────────────────────────────────────────────────────── */
+  .ide-statusbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    height: 22px;
+    background: var(--color-void);
+    border-top: 1px solid var(--color-border);
+    flex-shrink: 0;
+  }
+  .ide-status-l, .ide-status-r {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--color-fg-dim);
+    white-space: nowrap;
+  }
+  .ide-status-branch { display: flex; align-items: center; gap: 4px; }
+  .ide-status-dot    { transition: color 0.3s; }
+  .ide-status-sep    { color: var(--color-border-bright); }
+
+  /* ── CTA ─────────────────────────────────────────────────────────────────── */
+  .cta-wrap { text-align: center; margin-top: 2rem; }
+
+  /* ── Tab dropdown (all screens) ─────────────────────────────────────────── */
+  .ide-tab-bar { display: none; }
+
+  .ide-tab-dropdown-wrap {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 10px;
+    height: 32px;
+    background: var(--color-void);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    color: var(--color-fg-dim);
+  }
+  .ide-tab-dropdown {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    color: var(--color-fg-muted);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .ide-tab-dropdown option {
+    background: var(--color-panel);
+    color: var(--color-fg-muted);
+  }
+  .ide-dropdown-chevron { color: var(--color-fg-dim); flex-shrink: 0; }
+
+  /* ── Mobile ──────────────────────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .ide-window              { height: 480px; }
+    .ide-sidebar             { width: 175px; }
+    .ide-view-btn span:not(svg) { display: none; }
   }
 </style>

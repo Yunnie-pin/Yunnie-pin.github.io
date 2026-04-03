@@ -4,10 +4,11 @@ import CmdButton from './ui/CmdButton.astro';
 import { typewriterRoles } from '../data/profile';
 import { about } from '../data/about';
 import { achievements } from '../data/achievements';
-import { projects } from '../data/projects';
+import { getCollection } from 'astro:content';
 
 const _achData = achievements.map(a => ({ title: a.title, issuer: a.issuer, date: a.date, rank: a.rank }));
-const _prjData = projects.map(p => ({ title: p.title, tech: p.tech, status: p.status }));
+const _projectEntries = await getCollection('projects');
+const _prjData = _projectEntries.map(e => ({ title: e.data.title, tech: e.data.tech, status: e.data.status }));
 ---
 
 <section id="hero" class="hero-section bg-grid-dots">
@@ -147,7 +148,7 @@ const _prjData = projects.map(p => ({ title: p.title, tech: p.tech, status: p.st
 </script>
 
 <!-- Typewriter script -->
-<script define:vars={{ typewriterRoles }}>
+<script define:vars={{ typewriterRoles }} is:inline>
   const roles = typewriterRoles;
   let roleIndex = 0;
   let charIndex = roles[0].length; // SSR already rendered first role fully
