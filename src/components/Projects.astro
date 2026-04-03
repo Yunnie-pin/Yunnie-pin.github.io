@@ -4,8 +4,8 @@ import { getCollection } from 'astro:content';
 
 const MD_COLOR = '#519aba';
 
-// Load and sort: featured first, then live → wip → internal → archived
-const STATUS_ORDER = { live: 0, wip: 1, internal: 2, archived: 3 };
+// Load and sort: featured first, then live → wip → archived → internal
+const STATUS_ORDER = { live: 0, wip: 1, archived: 2, internal: 3};
 const entries = (await getCollection('projects')).sort((a, b) => {
   if (a.data.featured && !b.data.featured) return -1;
   if (!a.data.featured && b.data.featured) return  1;
