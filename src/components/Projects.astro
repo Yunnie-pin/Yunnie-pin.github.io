@@ -633,9 +633,21 @@ const defaultId = rendered.find(r => r.data.featured)?.id ?? rendered[0]?.id ?? 
     }, { once: true });
   });
 
-  // ── Wheel trap (document-level, non-passive) ──────────────────────────────
-  // Must be on document with passive:false — element-level listeners can be
-  // ignored if a passive ancestor listener was registered first by the browser.
+  // ── Lock page scroll when cursor is inside IDE ────────────────────────────
+  ideWindow?.addEventListener('mouseenter', () => {
+    const sw = window.innerWidth - document.documentElement.clientWidth;
+    document.documentElement.style.overflowY = 'hidden';
+    document.body.style.overflowY = 'hidden';
+    document.body.style.paddingRight = sw + 'px';
+  });
+  ideWindow?.addEventListener('mouseleave', () => {
+    document.documentElement.style.overflowY = '';
+    document.body.style.overflowY = '';
+    document.body.style.paddingRight = '';
+  });
+
+  // ── Wheel trap (document-level, non-passive, capture phase) ──────────────
+  // capture:true ensures preventDefault fires before any passive listeners.
   document.addEventListener('wheel', e => {
     const win = document.getElementById('ide-window');
     if (!win) return;
@@ -647,6 +659,12 @@ const defaultId = rendered.find(r => r.data.featured)?.id ?? rendered[0]?.id ?? 
     // We're inside the IDE — always prevent page scroll
     e.preventDefault();
 
+    // Normalize delta (deltaMode: 0=px, 1=line, 2=page)
+    const LINE = 20, PAGE = ideContent ? ideContent.clientHeight : 400;
+    const delta = e.deltaMode === 2 ? e.deltaY * PAGE
+                : e.deltaMode === 1 ? e.deltaY * LINE
+                : e.deltaY;
+
     // Walk up from the event target to find the first scrollable element
     let scrolled = false;
     let el = node;
@@ -654,19 +672,18 @@ const defaultId = rendered.find(r => r.data.featured)?.id ?? rendered[0]?.id ?? 
       if (el instanceof Element) {
         const oy = getComputedStyle(el).overflowY;
         if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight) {
-          const atTop    = el.scrollTop === 0 && e.deltaY < 0;
-          const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1 && e.deltaY > 0;
-          if (!atTop && !atBottom) { el.scrollTop += e.deltaY; scrolled = true; break; }
+          const atTop    = el.scrollTop === 0 && delta < 0;
+          const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1 && delta > 0;
+          if (!atTop && !atBottom) { el.scrollTop += delta; scrolled = true; break; }
         }
       }
       el = el.parentElement;
     }
     // Fallback: always deliver scroll to ide-content
-    if (!scrolled) {
-      const content = document.getElementById('ide-content');
-      if (content) content.scrollTop += e.deltaY;
+    if (!scrolled && ideContent) {
+      ideContent.scrollTop += delta;
     }
-  }, { passive: false });
+  }, { passive: false, capture: true });
 
   // ── Mobile: collapse sidebar by default ───────────────────────────────────
   if (window.innerWidth < 640) sidebar.classList.add('collapsed');

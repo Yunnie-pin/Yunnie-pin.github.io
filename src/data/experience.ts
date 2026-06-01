@@ -1,5 +1,5 @@
 export interface Experience {
-  company:      string;
+  company?:      string;
   role:         string;
   period:       string;
   location:     string;
@@ -9,11 +9,10 @@ export interface Experience {
 
 export const experiences: Experience[] = [
   {
-    company:  "PT. Telto Telematis Indonesia",
     role:     "Backend Developer",
-    period:   "July 2024 — Present",
-    location: "Yogyakarta, Indonesia",
-    current:  true,
+    period:   "July 2024",
+    location: "Hybrid (Remote & On-site)",
+    current:  false,
     achievements: [
       "Provide backend support for multiple client projects, ensuring robust and scalable API development using Go.",
       "Design and implement RESTful APIs with comprehensive documentation and GRPC services for high-performance communication between microservices.",
@@ -21,7 +20,6 @@ export const experiences: Experience[] = [
     ],
   },
   {
-    company:  "Freelance Software Developer",
     role:     "Fullstack Developer",
     period:   "Nov 2021 — Jun 2023",
     location: "Remote",

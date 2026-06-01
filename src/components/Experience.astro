@@ -26,7 +26,7 @@ import { experiences } from '../data/experience';
           <!-- Content -->
           <div class="timeline-content">
             <TerminalCard
-              title={`~/experience/${exp.company.toLowerCase().replace(/ /g, '-')}`}
+              title={`~/experience/${(exp.company ?? exp.role).toLowerCase().replace(/ /g, '-')}`}
               class="exp-card"
             >
               <div class="exp-body">
@@ -35,10 +35,12 @@ import { experiences } from '../data/experience';
                 <div class="exp-header">
                   <div>
                     <h3 class="exp-role font-mono">{exp.role}</h3>
-                    <p class="exp-company">
-                      <span style="color: var(--color-primary);">@</span>
-                      {exp.company}
-                    </p>
+                    {exp.company && exp.company !== '-' && (
+                      <p class="exp-company">
+                        <span style="color: var(--color-primary);">@</span>
+                        {exp.company}
+                      </p>
+                    )}
                   </div>
                   <div class="exp-meta">
                     <span class="exp-period font-mono">{exp.period}</span>
