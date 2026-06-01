@@ -10,9 +10,9 @@ export interface Experience {
 export const experiences: Experience[] = [
   {
     role:     "Backend Developer",
-    period:   "July 2024",
+    period:   "July 2024 — Present",
     location: "Hybrid (Remote & On-site)",
-    current:  false,
+    current:  true,
     achievements: [
       "Provide backend support for multiple client projects, ensuring robust and scalable API development using Go.",
       "Design and implement RESTful APIs with comprehensive documentation and GRPC services for high-performance communication between microservices.",
