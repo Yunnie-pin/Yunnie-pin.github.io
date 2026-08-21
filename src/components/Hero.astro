@@ -15,6 +15,17 @@ const _prjData = _projectEntries.map(e => ({ title: e.data.title, tech: e.data.t
   <!-- Particle canvas -->
   <canvas id="hero-particles" aria-hidden="true"></canvas>
 
+  <!-- Decorative corner gears — shape defined once, reused by each corner -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="hero-gear-shape" viewBox="0 0 24 24" fill="none">
+      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M19.622 10.395l-1.097-2.65L20 6l-2-2-1.735 1.483-2.707-1.113L12.935 2h-1.954l-.632 2.401-2.645 1.115L6 4 4 6l1.453 1.789-1.08 2.657L2 11v2l2.401.655L5.516 16.3 4 18l2 2 1.791-1.46 2.606 1.072L11 22h2l.604-2.387 2.651-1.098C16.697 18.831 18 20 18 20l2-2-1.484-1.75 1.098-2.652L22 13v-2l-2.378-.605Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+  </svg>
+
+  <svg class="hero-gear hero-gear-tl" aria-hidden="true"><use href="#hero-gear-shape" /></svg>
+  <svg class="hero-gear hero-gear-br" aria-hidden="true"><use href="#hero-gear-shape" /></svg>
+
   <!-- Scroll cue -->
   <div class="scroll-cue" id="scroll-cue" aria-hidden="true">
     <span class="scroll-cue-label">scroll</span>
@@ -79,16 +90,6 @@ const _prjData = _projectEntries.map(e => ({ title: e.data.title, tech: e.data.t
 
       <!-- Right: logo / terminal -->
       <div class="hero-logo-wrap animate-fade-up animation-delay-225" id="hero-right-col">
-
-        <!-- Floating tech badges -->
-        <div class="float-badges" aria-hidden="true">
-          <span class="badge badge-primary float-badge">[Go]</span>
-          <span class="badge badge-primary float-badge">[PHP]</span>
-          <span class="badge badge-cyan float-badge">[Node.js]</span>
-          <span class="badge badge-cyan float-badge">[PostgreSQL]</span>
-          <span class="badge float-badge">[Docker]</span>
-          <span class="badge float-badge">[Redis]</span>
-        </div>
 
         <span class="hero-logo" id="hero-logo-el"></span>
 
@@ -1068,6 +1069,58 @@ const _prjData = _projectEntries.map(e => ({ title: e.data.title, tech: e.data.t
     z-index: 0;
   }
 
+  /* Decorative corner gears — mirrors .tc-gear on TerminalCard.
+     `translate` is kept separate from the rotate animation so the two
+     don't overwrite each other on the same transform property. */
+  .hero-gear {
+    position: absolute;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .hero-gear-br {
+    bottom: 0;
+    right: 0;
+    width: clamp(560px, 72vw, 960px);
+    height: clamp(560px, 72vw, 960px);
+    translate: 38% 38%;
+    color: rgba(var(--color-primary-rgb), 0.09);
+    animation: gear-spin 24s linear infinite;
+  }
+
+  /* Smaller and counter-rotating, so the pair reads as meshed gears */
+  .hero-gear-tl {
+    top: 0;
+    left: 0;
+    width: clamp(300px, 40vw, 530px);
+    height: clamp(300px, 40vw, 530px);
+    translate: -38% -38%;
+    color: rgba(var(--color-primary-rgb), 0.07);
+    animation: gear-spin 34s linear infinite reverse;
+  }
+
+  @keyframes gear-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 767px) {
+    .hero-gear-br {
+      width: 480px;
+      height: 480px;
+      color: rgba(var(--color-primary-rgb), 0.07);
+    }
+    .hero-gear-tl {
+      width: 280px;
+      height: 280px;
+      color: rgba(var(--color-primary-rgb), 0.055);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-gear { animation: none; }
+  }
+
   .container {
     position: relative;
     z-index: 1;
@@ -1091,10 +1144,59 @@ const _prjData = _projectEntries.map(e => ({ title: e.data.title, tech: e.data.t
     grid-template-columns: 1fr;
     align-items: center;
     gap: 3rem;
+    position: relative;
   }
   @media (min-width: 768px) {
     .hero-grid {
       grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* Card surface behind the grid — translucent so the particle field and
+     corner gears still read through it. z-index -1 stays inside .container's
+     stacking context, so it sits above the canvas but below the content. */
+  .hero-grid::before {
+    content: '';
+    position: absolute;
+    inset: -1.5rem -1rem;
+    z-index: -1;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--color-panel) 62%, transparent);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+  }
+  @media (min-width: 768px) {
+    .hero-grid::before {
+      inset: -2.5rem -1.5rem;
+    }
+  }
+
+  /* Vertical split down the middle of the card, sitting in the grid gap.
+     Hidden below 768px, where the grid collapses to a single column and
+     .hero-logo-wrap is display:none — a centre line would cut the text. */
+  .hero-grid::after {
+    content: '';
+    display: none;
+    position: absolute;
+    top: -2.5rem;
+    bottom: -2.5rem;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      var(--color-border-bright) 18%,
+      var(--color-border-bright) 82%,
+      transparent
+    );
+  }
+  @media (min-width: 768px) {
+    .hero-grid::after {
+      display: block;
     }
   }
 
@@ -1228,54 +1330,6 @@ const _prjData = _projectEntries.map(e => ({ title: e.data.title, tech: e.data.t
     position: relative;
     width: clamp(300px, 40vw, 460px);
     height: clamp(300px, 40vw, 460px);
-  }
-
-  /* ── Floating tech badges (orbit arc) ───────────────────────────────────── */
-
-  /*
-   * Orbit radius ≈ 44% from center. 6 positions at 60° intervals:
-   *   top(x)    = 50% + 44 * sin(θ)
-   *   top(y)    = 50% - 44 * cos(θ)
-   * Each badge is centered on its orbit point via translate(-50%, -50%).
-   */
-  @keyframes badgeFloat {
-    0%, 100% { transform: translate(-50%, -50%) translateY(0px);    }
-    50%       { transform: translate(-50%, -50%) translateY(-10px);  }
-  }
-
-  .float-badges {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 2;
-  }
-
-  .float-badge {
-    position: absolute;
-    pointer-events: auto;
-    animation: badgeFloat 3s ease-in-out infinite;
-    transition: opacity 0.3s ease-out;
-  }
-
-  /* Clock positions — θ=0° at 12 o'clock, clockwise every 60° */
-  .float-badge:nth-child(1) { top:  6%; left: 50%;  animation-duration: 3.2s; animation-delay: 0.0s; } /* 12 */
-  .float-badge:nth-child(2) { top: 28%; left: 88%;  animation-duration: 2.9s; animation-delay: 0.6s; } /*  2 */
-  .float-badge:nth-child(3) { top: 72%; left: 88%;  animation-duration: 3.5s; animation-delay: 1.2s; } /*  4 */
-  .float-badge:nth-child(4) { top: 94%; left: 50%;  animation-duration: 3.0s; animation-delay: 1.8s; } /*  6 */
-  .float-badge:nth-child(5) { top: 72%; left: 12%;  animation-duration: 3.1s; animation-delay: 0.9s; } /*  8 */
-  .float-badge:nth-child(6) { top: 28%; left: 12%;  animation-duration: 2.8s; animation-delay: 0.3s; } /* 10 */
-
-  /* Fade out when terminal opens — no transform conflict with animation */
-  .hero-logo-wrap.terminal-open .float-badge {
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .float-badge {
-      animation: none;
-      transform: translate(-50%, -50%);
-    }
   }
 
   .hero-logo {
