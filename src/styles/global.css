@@ -138,8 +138,11 @@ body {
     transform: translateY(0);
   }
 }
+/* `both` (not `forwards`) is required: with a delay, a forwards-only fill
+   paints the element at full opacity during the delay, then snaps it to
+   opacity 0 when the animation starts — a visible flash on first load. */
 .animate-fade-up {
-  animation: fadeUp 0.4s ease-out forwards;
+  animation: fadeUp 0.4s ease-out both;
 }
 .animation-delay-75  { animation-delay: 75ms; }
 .animation-delay-150 { animation-delay: 150ms; }

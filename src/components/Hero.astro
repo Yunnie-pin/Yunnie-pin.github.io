@@ -41,16 +41,18 @@ const _prjData = _projectEntries.map(e => ({ title: e.data.title, tech: e.data.t
       <div class="hero-content">
 
         <!-- Terminal boot line (clickable) -->
-        <p class="font-mono boot-line animate-fade-up"
-           id="boot-line-btn" role="button" tabindex="0"
-           aria-expanded="false" aria-controls="hero-terminal">
+        <button type="button" class="font-mono boot-line animate-fade-up"
+                id="boot-line-btn"
+                aria-expanded="false" aria-controls="hero-terminal">
           <span class="boot-prefix">$</span>
           <span class="boot-cmd"> whoami</span>
           <span class="boot-hint" id="boot-hint"><span id="boot-hint-text"></span><span class="boot-cursor" id="boot-cursor" aria-hidden="true">▋</span></span>
-        </p>
+        </button>
 
         <!-- Name -->
-        <h1 class="hero-name animate-fade-up animation-delay-75">
+        <!-- No animation-delay: this is the LCP element, so it must not be
+             held at opacity 0 longer than necessary. -->
+        <h1 class="hero-name animate-fade-up">
           <span class="phosphor">Arifin</span>
           <span class="hero-name-last"> Yunianta</span>
           <Cursor />
@@ -768,9 +770,18 @@ const _prjData = _projectEntries.map(e => ({ title: e.data.title, tech: e.data.t
   }
 
   // ── Events ──────────────────────────────────────────────────────────────────
-  bootBtn.addEventListener('click', () => isOpen ? closeTerminal() : openTerminal());
-  bootBtn.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bootBtn.click(); }
+  // Enter/Space need no handler — bootBtn is a real <button>.
+  bootBtn.addEventListener('click', () => {
+    if (isOpen) {
+      terminal.classList.contains('ht-popup-mode') ? closeHtPopup() : closeTerminal();
+      return;
+    }
+    // Below 768px the hero's right column is display:none and the grid
+    // collapses to one column, so an inline terminal would open below the
+    // fold with no feedback. The popup is fixed + centred, so it is always
+    // in view and already handles overlay/Esc/restore.
+    if (window.innerWidth < 768) openTerminalAsPopup();
+    else openTerminal();
   });
 
   const redBtn    = document.getElementById('ht-red-btn')    as HTMLElement | null;
@@ -1042,7 +1053,10 @@ const _prjData = _projectEntries.map(e => ({ title: e.data.title, tech: e.data.t
 
 <style>
   .hero-section {
+    /* dvh tracks the *current* viewport, so the hero doesn't overflow behind
+       mobile browser chrome. The vh line is the fallback for older engines. */
     height: 100vh;
+    height: 100dvh;
     display: flex;
     align-items: center;
     padding: 4rem 0;
@@ -1055,6 +1069,7 @@ const _prjData = _projectEntries.map(e => ({ title: e.data.title, tech: e.data.t
   @media (max-width: 1023px) {
     .hero-section {
       height: calc(100vh - 48px);
+      height: calc(100dvh - 48px);
       position: relative; /* mobile: normal scroll */
       top: auto;
     }
@@ -1238,10 +1253,17 @@ const _prjData = _projectEntries.map(e => ({ title: e.data.title, tech: e.data.t
     opacity: 1;
   }
 
+  /* A real <button>, so Enter/Space and focus come from the platform.
+     Everything below the first group is the native-button reset. */
   .boot-line {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    text-align: left;
     font-size: 0.875rem;
     margin-bottom: 1rem;
-    opacity: 0;
     cursor: pointer;
     user-select: none;
     display: inline-flex;
@@ -1249,6 +1271,12 @@ const _prjData = _projectEntries.map(e => ({ title: e.data.title, tech: e.data.t
     gap: 0.4rem;
     width: fit-content;
     transition: var(--transition);
+  }
+
+  .boot-line:focus-visible {
+    outline: none;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--glow-focus);
   }
   .boot-line:hover .boot-hint { opacity: 1; }
   .boot-line.active .boot-hint { opacity: 0.4; }
@@ -1552,10 +1580,11 @@ const _prjData = _projectEntries.map(e => ({ title: e.data.title, tech: e.data.t
     box-shadow: 0 0 6px rgba(var(--color-primary-rgb),0.60);
   }
 
-  /* Override opacity-0 from animate-fade-up so animation plays correctly */
+  /* `both` fills backwards as well, so the element already sits at opacity 0
+     during any animation-delay — the separate `opacity: 0` this rule used to
+     carry is no longer needed to prevent a flash. */
   .animate-fade-up {
-    opacity: 0;
-    animation: fadeUp 0.5s ease-out forwards;
+    animation: fadeUp 0.5s ease-out both;
   }
 
   .boot-prefix    { color: var(--color-primary); }
